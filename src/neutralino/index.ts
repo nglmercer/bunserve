@@ -1,7 +1,7 @@
 import neutralino from '@neutralinojs/lib';
 neutralino.init();
 import * as buntralino from 'buntralino-client';
-import '../js/main.js';
+import './js/main.js';
 // Sample Bun interaction
 (async () => {
     await buntralino.ready;
