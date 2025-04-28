@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title></title> <!-- Inicialmente vacío -->
+    <link rel="stylesheet" href="/src/styles/index.css">
+</head>
+
+<body>
+    <script type="module" src="/src/neutralino/index.ts"></script>
+    <input type="file" name="uploadFile" id="uploadFile" style="display: none" />
+    <label for="uploadFile">Upload file</label>
+    <div id="fileContent"></div>
+    <input type="button" value="Abrir archivo" onclick="window.onFileUpload()">
+
+    <script>
+        // Establece el título como la URL actual
+        document.title = window.location.href;
+        console.log("Título original:", document.title);
+    </script>
+</body>
+
+</html>

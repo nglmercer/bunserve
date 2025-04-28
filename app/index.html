@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Buntralino+Vite sample app</title>
+  <script type="module" crossorigin src="/assets/index-CnwcmPvZ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BL5dumNo.css">
+</head>
+
+<body>
+    <div id="neutralinoapp">
+        <img src="/icon.png" class="logo" alt="Buntralino logo" />
+        <h1>Buntralino + Vite</h1>
+
+    </div>
+    <div id="theBunCheck">
+        Checking Buntralino connection…
+        <span class="rotate">🐰</span>
+    </div>
+    <span id="window_location"></span>
+    <!-- Your app's bundled scripts -->
+    <input type="file" name="uploadFile" id="uploadFile" style="display: none" />
+    <label for="uploadFile">Upload file</label>
+    <div id="fileContent"></div>
+    <button onclick="window.onFileUpload()">Open file</button>
+    <script>
+
+    </script>
+    <script>
+        const window_location = document.getElementById('window_location');
+        window_location.innerText = window.location.href;
+    </script>
+</body>
+
+</html>

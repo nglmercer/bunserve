@@ -1,0 +1,11 @@
+tasks.json
+/node_modules
+/dist
+/build
+.package-lock.json
+/bin
+/uploads
+src/bun/processed_videos/*
+src/processed_videos/*
+src/bun/videos/*
+bun.lockb
