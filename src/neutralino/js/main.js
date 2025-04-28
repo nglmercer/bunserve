@@ -10,6 +10,8 @@ FileInput.addEventListener('change', async (e) => {
     }
     const formData = new FormData();
     formData.append('video', file);
-    const response = await fetchapi.uploadFile(formData);
-    console.log('Response:', response);
+    console.log('FormData:', formData);
+    formData.forEach((value, key) => console.log(key, value))
+/*     const response = await fetchapi.uploadFile(formData);
+    console.log('Response:', response); */
 });

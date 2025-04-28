@@ -2,6 +2,7 @@ import neutralino from '@neutralinojs/lib';
 neutralino.init();
 import * as buntralino from 'buntralino-client';
 import './js/main.js';
+import './lit/init.ts'
 // Sample Bun interaction
 (async () => {
     await buntralino.ready;
@@ -24,7 +25,5 @@ async function getFileInfo(name: string | string[]) {
     console.log("Response", Response);
 }
 
-(window as any).getFileInfo = async (name: string | string[]) => {
-    getFileInfo(name);
-}
+(window as any).getFileInfo = async (name: string | string[]) => getFileInfo(name);
 (window as any).onFileUpload = onFileUpload;

@@ -5,15 +5,26 @@
     <meta charset="UTF-8">
     <title></title> <!-- Inicialmente vacío -->
     <link rel="stylesheet" href="/index.css">
+    <script type="module" src="/src/neutralino/index.ts"></script>
 </head>
 
 <body>
-    <script type="module" src="/src/neutralino/index.ts"></script>
-    <input type="file" name="uploadFile" id="uploadFile" style="display: none" />
-    <label for="uploadFile">Upload file</label>
-    <div id="fileContent"></div>
-    <input type="button" value="Abrir archivo" onclick="window.onFileUpload()">
-    
+    <dialog-container id="fileDialog">
+        <div class="modal__container">
+            <h2>Seleccionar archivo</h2>
+            <input type="file" name="uploadFile" id="uploadFile" style="display: none" />
+            <label for="uploadFile">Upload file</label>
+            <div id="fileContent"></div>
+        </div>
+    </dialog-container>
+    <button id="openFileDialog" onclick="document.getElementById('fileDialog')?.show()">
+        Abrir archivo
+    </button>
+<!--
+    <span>Obtener FilePath</span>
+     <input type="button" value="Abrir archivo" onclick="window.onFileUpload()">
+      -->
+
     <script>
         // Establece el título como la URL actual
         document.title = window.location.href;
