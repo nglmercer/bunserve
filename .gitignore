@@ -9,3 +9,4 @@ src/bun/processed_videos/*
 src/processed_videos/*
 src/bun/videos/*
 bun.lockb
+src/videos/*
