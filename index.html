@@ -12,9 +12,12 @@
     <dialog-container id="fileDialog">
         <div class="modal__container">
             <h2>Seleccionar archivo</h2>
-            <input type="file" name="uploadFile" id="uploadFile" style="display: none" />
-            <label for="uploadFile">Upload file</label>
-            <div id="fileContent"></div>
+            <form action="">
+                <c-input name="FileName" id="FileName" type="text"></c-input>
+                <c-input name="FileInput" id="FileInput" type="File"></c-input>
+
+                <button type="submit">Subir archivo</button>
+            </form>
         </div>
     </dialog-container>
     <button id="openFileDialog" onclick="document.getElementById('fileDialog')?.show()">

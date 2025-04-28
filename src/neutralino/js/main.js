@@ -1,13 +1,11 @@
 import { fetchapi } from "./fetchapi.js";
-const FileInput = document.getElementById('uploadFile');
-const FileContent = document.getElementById('fileContent');
+const FileInput = document.getElementById('FileInput');
+console.log('FileInput:', FileInput);
+FileInput.addEventListener('change', function (e) {
+    const { id, name, value, target } = e.detail;
+    const file = target.files[0];
 
-FileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-
-    if (file) {
-        console.log('File selected:', file.name);
-    }
+    if (!file) return;
     const formData = new FormData();
     formData.append('video', file);
     console.log('FormData:', formData);

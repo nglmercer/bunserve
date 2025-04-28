@@ -6,6 +6,7 @@ import {
     CInp
 } from './modal.js';
 import { DialogContent, DialogContainer } from './custom-modal.js';
+import {CInput} from './CInput.js';
 // Declare custom elements for improved autocompletion in HTML templates
 declare global {
     interface HTMLElementTagNameMap {
@@ -16,12 +17,12 @@ declare global {
         'c-inp': CInp;
         'dialog-content': DialogContent;
         'dialog-container': DialogContainer;
+        'c-input': CInput;
     }
 }
 
 /**
- * Ejemplo 5: Uso de la API con async/await
- */
+
 function createPromiseDialog(message: string): Promise<boolean> {
     return new Promise((resolve) => {
         const dialogContainer = document.createElement('dialog-container') as DialogContainer;
@@ -57,8 +58,8 @@ function createPromiseDialog(message: string): Promise<boolean> {
         dialogContainer.show();
     });
 }
-
 /*
+
 // Ejemplo de uso del diálogo con Promise
  async function usageExample() {
     // Crear un botón para abrir el diálogo
