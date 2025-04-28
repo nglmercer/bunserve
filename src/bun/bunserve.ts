@@ -3,7 +3,7 @@ import { mkdir } from 'fs/promises';
 import { handleUpload } from './routes/upload'; // Importa el manejador de upload
 import { handleCorsPreflight, addCorsHeaders } from './utils/cors'; // Importa utilidades CORS
 import { VIDEOS_DIR } from './hlsconvert'; // Importa para acceder a VIDEOS_DIR
-//import {db,dbPath } from './utils/ibd'; // Importa la instancia de la base de datos
+//import {db,dbPath } from './data/ibd'; // Importa la instancia de la base de datos
 
 const PORT = 4000;
 

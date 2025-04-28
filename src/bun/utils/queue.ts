@@ -1,13 +1,5 @@
 // queue.ts
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
-
-export interface Task {
-  id: string;
-  status: TaskStatus;
-  createdAt: Date;
-  updatedAt: Date;
-  data: Record<string, any>;
-}
+import { type TaskStatus, type Task } from '../types/index';
 
 class TaskQueue {
   private tasks: Record<string, Task> = {};

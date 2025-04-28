@@ -52,4 +52,20 @@ export interface TaskMetadata {
     resolutions: string[];
 }
 
-export type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type TaskStatus = 'pending' | 'processing' | 'in_progress' | 'completed' | 'failed';
+export interface Task {
+    id: string;
+    status: TaskStatus;
+    createdAt: Date;
+    updatedAt: Date;
+    data: Record<string, any>;
+  }
+export interface episodes {
+    id: number | null;
+    name: string | null;
+    message: string | null;
+    outputDir: string | null;
+    masterPlaylistPath: string | null;
+    masterPlaylistUrl: string | null;
+    CreatedAt: string;
+}
