@@ -26,9 +26,8 @@ export const updateTaskStatus = (status: TaskStatus, taskId: string): void => {
 /**
  * Handles task completion
  */
-export const completeTask = (taskId: string, result: any): Task | null => {
+export const completeTask = (taskId: string): Task | null => {
   updateTaskStatus('completed', taskId);
-  console.log(`Task ${taskId} completed successfully`,result);
   return fileuploadTaskQueue.getTask(taskId);
 };
 

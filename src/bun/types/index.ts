@@ -36,6 +36,7 @@ export interface ConversionResult {
     outputDir: string;
     masterPlaylistPath: string;
     masterPlaylistUrl: string;
+    result: Object | null;
 }
 
 export interface VideoMetadata {

@@ -7,14 +7,10 @@ import { getVideoMetadata, processResolution } from '../utils/ffmpeg-utils';
 import { validateVideoFilePath, validateVideoId, determineTargetResolutions } from '../utils/validation-utils';
 import { createMasterPlaylist } from '../utils/playlist-utils';
 import { createConversionTask, updateTaskStatus, completeTask, failTask } from '../utils/task-utils';
-import { db } from '../data/ibd';
 /**
  * Main function to convert a video to HLS format
  */
-export const convertToHls = async (
-  inputPath: string,
-  { videoId, basePath = '' }: Types.ConversionOptions,
-  userOptions: Partial<Types.HlsOptions> = {}
+export const convertToHls = async (  inputPath: string,  { videoId, basePath = '' }: Types.ConversionOptions,  userOptions: Partial<Types.HlsOptions> = {}
 ): Promise<Types.ConversionResult> => {
   // Validate inputs
   validateVideoFilePath(inputPath);
@@ -34,13 +30,14 @@ export const convertToHls = async (
       await getVideoMetadata(inputPath);
 
     // Create a task
-    taskId = createConversionTask({
+    const taskData = {
       videoId,
       originalWidth,
       originalHeight,
       bitrate: originalBitrateStr,
       resolutions: options.resolutions.map(r => r.name)
-    });
+    }
+    taskId = createConversionTask(taskData);
 
     console.log(`[${videoId}] Original resolution: ${originalWidth}x${originalHeight}, Bitrate: ${originalBitrateStr}`);
 
@@ -92,7 +89,8 @@ export const convertToHls = async (
       await createMasterPlaylist(outputDir, successfulResults, options, videoId, basePath);
 
     // Complete task
-    const result = completeTask(taskId, { masterPlaylistUrl });
+    const result = completeTask(taskId);
+    console.log(`[${videoId}] HLS conversion completed successfully.`, result);
     /* db.insert('episodes', result); */
     // Return result
     return {
@@ -100,6 +98,7 @@ export const convertToHls = async (
       outputDir,
       masterPlaylistPath,
       masterPlaylistUrl,
+      result
     };
 
   } catch (error) {

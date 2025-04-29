@@ -611,24 +611,25 @@ export const db = new DatabaseController();
   try {
     // Create a test table
     await db.createTable('episodes', `
-      id INTEGER PRIMARY KEY,
-      number INTEGER,
-      title TEXT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      number INTEGER NOT NULL,
+      title TEXT NOT NULL,
       description TEXT,
       image TEXT,
       duration INTEGER,
       season INTEGER,
-      likes INTEGER,
-      dislikes INTEGER,
-      views INTEGER,
-      createdAt TEXT,
-      `);
+      likes INTEGER DEFAULT 0,
+      dislikes INTEGER DEFAULT 0,
+      views INTEGER DEFAULT 0,
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+    `);    
      
       /*  message: string;
   outputDir: string;
   masterPlaylistPath: string;
   masterPlaylistUrl: string;*/
-      // Insert records
+  // Insert records
+  /*
       const randomMail = Math.random() + "@example.com"
       // insertar un nuevo usuario con el mismo email da error
       const objTest =  {
@@ -638,7 +639,6 @@ export const db = new DatabaseController();
      CreatedAt: new Date().toLocaleDateString()
     }
     console.log("objTest",objTest);
-    /*
     const user1 = await db.insert('episodes',objTest);
     console.log('Inserted user:', user1);
         
