@@ -4,7 +4,7 @@ import { db } from '../data/ibd';
 import { convertToHls, VIDEOS_DIR } from '../hlsconvert';
 import { validateFields } from '../utils/verify';
 
-interface UploadData {
+export interface UploadData {
     number: number;
     title: string;
     description: string;
@@ -22,12 +22,22 @@ const formDataVerify: UploadData = {
     season: 0
 };
 
-function getALLFORMDATA(formData: FormData): Record<string, string | File> {
-    const data: Record<string, string | File> = {};
+function getALLFORMDATA(formData: FormData): UploadData {
+    const data: Partial<UploadData> = {};
+    
     for (const [key, value] of formData.entries()) {
-        data[key] = value as string | File;
+        if (key === 'number' || key === 'season' || key === 'duration') {
+            data[key] = Number(value);
+        } else if (value instanceof File) {
+            continue; // Skip files as they're handled separately
+        } else {
+            if (key in formDataVerify) {
+                data[key as keyof UploadData] = value as any;
+            }
+        }
     }
-    return data;
+    
+    return data as UploadData;
 }
 
 export async function handleUpload(req: Request): Promise<Response> {
@@ -41,7 +51,6 @@ export async function handleUpload(req: Request): Promise<Response> {
         const formData = await req.formData();
         const file = formData.get('video');
         const formDataObj = getALLFORMDATA(formData as FormData);
-        const videoId = `${formDataObj.season}/${formDataObj.number}`;
 
         if (!file || !(file instanceof File) || file.size === 0) {
             console.error('Upload failed: No video file provided or file is empty.');
@@ -56,12 +65,13 @@ export async function handleUpload(req: Request): Promise<Response> {
             }
         };
         const IsValid = validateFields({
-            required: formDataObj,
-            actualObj: formDataVerify,
+            required: formDataVerify,
+            actualObj: formDataObj,
             options
         });
 
         if (!IsValid || !IsValid.isValid) {
+            console.log("IsValid",IsValid, );
            return new Response(JSON.stringify({
                 message: 'Debe subir un archivo de video válido.',
                 errors: IsValid.errors
@@ -79,8 +89,8 @@ export async function handleUpload(req: Request): Promise<Response> {
         await writeFile(tempPath, new Uint8Array(await file.arrayBuffer()));
         console.log(`Temporary video saved successfully.`);
         
-        console.log(`Starting HLS conversion for videoId: ${videoId}`, formDataObj);
-        const result = await convertToHls(tempPath, { videoId });
+        console.log(`Starting HLS conversion for videoId:`, formDataObj);
+        const result = await convertToHls(tempPath, formDataObj);
 
         if (result) {
             db.insert('episodes', formDataObj);

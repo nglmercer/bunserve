@@ -1,7 +1,9 @@
 // src/types/index.ts
 
 export interface ResolutionInfo {
-    name: string;
+    name: string | any;
+    season?: number | string;
+    episode?: number | string;
     size: string;
     bitrate: string;
     isOriginal?: boolean;
@@ -44,13 +46,31 @@ export interface VideoMetadata {
     height: number;
     bitrateStr: string;
 }
-
-export interface TaskMetadata {
+/*
+const taskData: {
     videoId: string;
+    season: number;
+    episode: number;
     originalWidth: number;
     originalHeight: number;
     bitrate: string;
-    resolutions: string[];
+    resolutions: {
+        name: string;
+        season: number;
+        episode: number;
+        size: string;
+        bitrate: string;
+        isOriginal: boolean;
+    }[];
+}*/
+export interface TaskMetadata {
+    videoId: string;
+    season: number | string;
+    episode: number | string;
+    originalWidth: number;
+    originalHeight: number;
+    bitrate: string;
+    resolutions: ResolutionInfo[];
 }
 
 export type TaskStatus = 'pending' | 'processing' | 'in_progress' | 'completed' | 'failed';
@@ -69,4 +89,12 @@ export interface episodes {
     masterPlaylistPath: string | null;
     masterPlaylistUrl: string | null;
     CreatedAt: string;
+}
+export interface UploadData {
+    number: number;
+    title: string;
+    description: string;
+    image: string;
+    duration: number;
+    season: number;
 }

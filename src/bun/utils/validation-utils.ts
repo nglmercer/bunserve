@@ -46,7 +46,7 @@ export const determineTargetResolutions = (
   originalWidth: number,
   originalHeight: number,
   originalBitrateStr: string,
-  userDefinedResolutions: ResolutionInfo[]
+  userDefinedResolutions: ResolutionInfo[],
 ): ResolutionInfo[] => {
   let targetResolutions = [...userDefinedResolutions];
   const originalResName = `${originalHeight}p`;
@@ -57,6 +57,8 @@ export const determineTargetResolutions = (
     if (isDifferent) {
       targetResolutions.push({
         name: originalResName,
+        season: userDefinedResolutions[0]?.season,
+        episode: userDefinedResolutions[0]?.episode,
         size: `${originalWidth}x${originalHeight}`,
         bitrate: originalBitrateStr,
         isOriginal: true

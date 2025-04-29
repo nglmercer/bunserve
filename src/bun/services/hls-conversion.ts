@@ -7,15 +7,20 @@ import { getVideoMetadata, processResolution } from '../utils/ffmpeg-utils';
 import { validateVideoFilePath, validateVideoId, determineTargetResolutions } from '../utils/validation-utils';
 import { createMasterPlaylist } from '../utils/playlist-utils';
 import { createConversionTask, updateTaskStatus, completeTask, failTask } from '../utils/task-utils';
+
 /**
  * Main function to convert a video to HLS format
  */
-export const convertToHls = async (  inputPath: string,  { videoId, basePath = '' }: Types.ConversionOptions,  userOptions: Partial<Types.HlsOptions> = {}
+export const convertToHls = async (
+  inputPath: string,
+  formDataObj: Types.UploadData,
+  userOptions: Partial<Types.HlsOptions> = {}
 ): Promise<Types.ConversionResult> => {
   // Validate inputs
+  const videoId = `${formDataObj.season}/${formDataObj.number}`;
   validateVideoFilePath(inputPath);
   validateVideoId(videoId);
-
+  
   // Merge options with defaults
   const options: Types.HlsOptions = { ...defaultHlsOptions, ...userOptions };
 
@@ -32,11 +37,21 @@ export const convertToHls = async (  inputPath: string,  { videoId, basePath = '
     // Create a task
     const taskData = {
       videoId,
+      season: formDataObj.season,
+      episode: formDataObj.number,
       originalWidth,
       originalHeight,
       bitrate: originalBitrateStr,
-      resolutions: options.resolutions.map(r => r.name)
-    }
+      resolutions: [{
+        name: `${originalHeight}p`,
+        season: formDataObj.season,
+        episode: formDataObj.number,
+        size: `${originalWidth}x${originalHeight}`,
+        bitrate: originalBitrateStr,
+        isOriginal: true
+      }]
+    };
+    
     taskId = createConversionTask(taskData);
 
     console.log(`[${videoId}] Original resolution: ${originalWidth}x${originalHeight}, Bitrate: ${originalBitrateStr}`);
@@ -86,19 +101,35 @@ export const convertToHls = async (  inputPath: string,  { videoId, basePath = '
 
     // Create master playlist
     const { masterPlaylistPath, masterPlaylistUrl } =
-      await createMasterPlaylist(outputDir, successfulResults, options, videoId, basePath);
+      await createMasterPlaylist(outputDir, successfulResults, options, videoId);
 
-    // Complete task
+    // Update task with final resolutions
+    const finalTaskData = {
+      ...taskData,
+      resolutions: successfulResults.map(res => ({
+        name: res.name,
+        season: formDataObj.season,
+        episode: formDataObj.number,
+        size: res.size,
+        bitrate: res.bitrate,
+        isOriginal: res.isOriginal || false,
+        bandwidth: res.bandwidth,
+        playlistRelativePath: res.playlistRelativePath
+      }))
+    };
+    
+    // Complete task with updated data
     const result = completeTask(taskId);
     console.log(`[${videoId}] HLS conversion completed successfully.`, result);
     /* db.insert('episodes', result); */
+    
     // Return result
     return {
       message: 'HLS conversion successful',
       outputDir,
       masterPlaylistPath,
       masterPlaylistUrl,
-      result
+      result:{ ...result, ...finalTaskData }
     };
 
   } catch (error) {
@@ -108,7 +139,6 @@ export const convertToHls = async (  inputPath: string,  { videoId, basePath = '
     if (taskId) {
       failTask(taskId, error instanceof Error ? error : new Error(String(error)));
     }
-
 
     throw error;
   }
