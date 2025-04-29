@@ -44,7 +44,7 @@ export class CInput extends LitElement {
     // Properties with decorators
     @property({ type: String, reflect: true }) type: InputType = 'text';
     @property({ type: String, reflect: true }) name?: string;
-    @property({ type: String }) value: string = '';
+    @property({ type: String }) value?: string;
     @property({ type: String, reflect: true }) placeholder?: string;
     @property({ type: Boolean, reflect: true }) disabled: boolean = false;
     @property({ type: Boolean, reflect: true }) readonly: boolean = false;
@@ -56,7 +56,7 @@ export class CInput extends LitElement {
 
     // Internal state properties
     @state() private _isValid: boolean = true;
-    @state() private _internalValue: string | boolean | number | string[] | null = '';
+    @state() private _internalValue?: string | boolean | number | string[] | null;
 
     constructor() {
         super();
@@ -416,8 +416,8 @@ export class CInput extends LitElement {
 
     // Public methods
     /** Returns the current value (potentially typed) */
-    getVal(): string | boolean | number | string[] | null {
-        return this._internalValue;
+    getVal(): string | boolean | number | string[] | null | undefined {
+        return this._internalValue || this.value;
     }
 
     /** Verifies input validity */

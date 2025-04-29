@@ -30,8 +30,8 @@ export const validateVideoId = (videoId: string): boolean => {
     throw new Error('Invalid video ID');
   }
   
-  // Check if video ID has valid characters (alphanumeric, dash, underscore)
-  const validIdPattern = /^[a-zA-Z0-9_-]+$/;
+  // Check if video ID has valid characters (alphanumeric, dash, underscore, slash)
+  const validIdPattern = /^[a-zA-Z0-9_\/-]+$/;
   if (!validIdPattern.test(videoId)) {
     throw new Error('Video ID contains invalid characters');
   }

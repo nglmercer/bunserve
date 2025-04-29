@@ -612,13 +612,18 @@ export const db = new DatabaseController();
     // Create a test table
     await db.createTable('episodes', `
       id INTEGER PRIMARY KEY,
-      name TEXT,
-      message TEXT,
-      outputDir TEXT,
-      masterPlaylistPath TEXT,
-      masterPlaylistUrl TEXT,
-      CreatedAt TEXT NOT NULL,
+      number INTEGER,
+      title TEXT,
+      description TEXT,
+      image TEXT,
+      duration INTEGER,
+      season INTEGER,
+      likes INTEGER,
+      dislikes INTEGER,
+      views INTEGER,
+      createdAt TEXT,
       `);
+     
       /*  message: string;
   outputDir: string;
   masterPlaylistPath: string;
