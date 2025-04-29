@@ -17,7 +17,7 @@ export const convertToHls = async (
   userOptions: Partial<Types.HlsOptions> = {}
 ): Promise<Types.ConversionResult> => {
   // Validate inputs
-  const videoId = `${formDataObj.season}/${formDataObj.number}`;
+  const videoId = `${formDataObj.season_id}/${formDataObj.number}`;
   validateVideoFilePath(inputPath);
   validateVideoId(videoId);
   
@@ -37,14 +37,14 @@ export const convertToHls = async (
     // Create a task
     const taskData = {
       videoId,
-      season: formDataObj.season,
+      season: formDataObj.season_id,
       episode: formDataObj.number,
       originalWidth,
       originalHeight,
       bitrate: originalBitrateStr,
       resolutions: [{
         name: `${originalHeight}p`,
-        season: formDataObj.season,
+        season: formDataObj.season_id,
         episode: formDataObj.number,
         size: `${originalWidth}x${originalHeight}`,
         bitrate: originalBitrateStr,
@@ -108,7 +108,7 @@ export const convertToHls = async (
       ...taskData,
       resolutions: successfulResults.map(res => ({
         name: res.name,
-        season: formDataObj.season,
+        season: formDataObj.season_id,
         episode: formDataObj.number,
         size: res.size,
         bitrate: res.bitrate,

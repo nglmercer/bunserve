@@ -96,5 +96,6 @@ export interface UploadData {
     description: string;
     image: string;
     duration: number;
-    season: number;
+    catalog_id: number;
+    season_id: number;
 }

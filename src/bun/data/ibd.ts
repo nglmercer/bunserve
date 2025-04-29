@@ -612,17 +612,18 @@ export const db = new DatabaseController();
     // Create a test table
     await db.createTable('episodes', `
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      number INTEGER NOT NULL,
+      catalog_id INTEGER NOT NULL,
+      season_id INTEGER NOT NULL,
+      episode_number INTEGER NOT NULL,
       title TEXT NOT NULL,
       description TEXT,
       image TEXT,
       duration INTEGER,
-      season INTEGER,
       likes INTEGER DEFAULT 0,
       dislikes INTEGER DEFAULT 0,
       views INTEGER DEFAULT 0,
-      createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-    `);    
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    `);     
      
       /*  message: string;
   outputDir: string;

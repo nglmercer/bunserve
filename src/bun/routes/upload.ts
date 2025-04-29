@@ -10,7 +10,8 @@ export interface UploadData {
     description: string;
     image: string;
     duration: number;
-    season: number;
+    catalog_id: number;
+    season_id: number;
 }
 
 const formDataVerify: UploadData = {
@@ -19,87 +20,121 @@ const formDataVerify: UploadData = {
     description: '',
     image: '',
     duration: 0,
-    season: 0
+    catalog_id: 0,
+    season_id: 0
 };
-
-function getALLFORMDATA(formData: FormData): UploadData {
-    const data: Partial<UploadData> = {};
+type FormDataParserOptions = {
+    numberKeys?: string[];
+    stringKeys?: string[];
+    booleanKeys?: string[];
+    ignoreKeys?: string[];
+    [key: string]: any; // permite extender fácilmente
+  };
+  
+  function parseFormData<T extends Record<string, any>>(
+    formData: FormData,
+    options: FormDataParserOptions = {}
+  ): T {
+    const { numberKeys = [], stringKeys = [], booleanKeys = [], ignoreKeys = [] } = options;
+    const result = {} as T;
     
     for (const [key, value] of formData.entries()) {
-        if (key === 'number' || key === 'season' || key === 'duration') {
-            data[key] = Number(value);
-        } else if (value instanceof File) {
-            continue; // Skip files as they're handled separately
-        } else {
-            if (key in formDataVerify) {
-                data[key as keyof UploadData] = value as any;
-            }
+      if (ignoreKeys.includes(key)) continue;
+      if (value instanceof File) continue;
+      
+      if (numberKeys.includes(key)) {
+        const numValue = Number(value);
+        if (!isNaN(numValue)) {
+          result[key as keyof T] = numValue as unknown as T[keyof T];
         }
+      } else if (booleanKeys.includes(key)) {
+        let boolValue: boolean;
+        if (value === 'true' || value === '1') {
+          boolValue = true;
+        } else if (value === 'false' || value === '0') {
+          boolValue = false;
+        } else {
+          boolValue = Boolean(value);
+        }
+        result[key as keyof T] = boolValue as unknown as T[keyof T];
+      } else if (stringKeys.includes(key) || typeof value === 'string') {
+        result[key as keyof T] = String(value) as unknown as T[keyof T];
+      } else {
+        result[key as keyof T] = value as unknown as T[keyof T];
+      }
     }
     
-    return data as UploadData;
-}
+    return result;
+  }
 
-export async function handleUpload(req: Request): Promise<Response> {
+  export async function handleUpload(req: Request): Promise<Response> {
     if (req.method !== 'POST') {
         return new Response('Method Not Allowed', { status: 405 });
     }
 
-    console.log('Handling POST /upload request');
-
     try {
         const formData = await req.formData();
-        const file = formData.get('video');
-        const formDataObj = getALLFORMDATA(formData as FormData);
 
+        // Extraer el video
+        const file = formData.get('video');
         if (!file || !(file instanceof File) || file.size === 0) {
             console.error('Upload failed: No video file provided or file is empty.');
             return new Response('Debe subir un archivo de video válido.', { status: 400 });
         }
 
+        // Parsear datos del formulario
+        const formDataObj = parseFormData<UploadData>(formData, {
+            numberKeys: ['number', 'duration', 'catalog_id', 'season_id'],
+            stringKeys: ['title', 'description', 'image']
+        });        
+
         console.log(`Received video file: ${file.name}, Size: ${file.size} bytes`);
+        console.log('Parsed form data:', formDataObj);
+
+        // Validación de campos requeridos
         const options = {
             validators: {
-                season: (value: any) => value > 0,
+                season_id: (value: any) => value > 0,
                 number: (value: any) => value > 0
             }
         };
-        const IsValid = validateFields({
+
+        const validation = validateFields({
             required: formDataVerify,
             actualObj: formDataObj,
             options
         });
 
-        if (!IsValid || !IsValid.isValid) {
-            console.log("IsValid",IsValid, );
-           return new Response(JSON.stringify({
-                message: 'Debe subir un archivo de video válido.',
-                errors: IsValid.errors
+        if (!validation || !validation.isValid) {
+            return new Response(JSON.stringify({
+                message: 'Algunos campos son inválidos.',
+                errors: validation?.errors ?? {}
             }), {
                 headers: { 'Content-Type': 'application/json' },
                 status: 400
             });
         }
-        
-        const videoDir = join(VIDEOS_DIR, formDataObj.season.toString());
+
+        // Preparar directorio temporal
+        const videoDir = join(VIDEOS_DIR, formDataObj.season_id.toString());
         await mkdir(videoDir, { recursive: true });
-        
+
         const tempPath = join(videoDir, `${formDataObj.number}_${file.name}`);
         console.log(`Saving temporary video to: ${tempPath}`);
         await writeFile(tempPath, new Uint8Array(await file.arrayBuffer()));
         console.log(`Temporary video saved successfully.`);
-        
-        console.log(`Starting HLS conversion for videoId:`, formDataObj);
+
+        // Iniciar conversión a HLS
         const result = await convertToHls(tempPath, formDataObj);
 
         if (result) {
             db.insert('episodes', formDataObj);
         }
-        
+
         return new Response(JSON.stringify({
             message: 'Video procesado y listo para streaming.',
-            playlistUrl: "" + result.masterPlaylistUrl + "",
-            result: result
+            playlistUrl: result?.masterPlaylistUrl || '',
+            result
         }), {
             headers: { 'Content-Type': 'application/json' },
             status: 200
