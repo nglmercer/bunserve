@@ -3,33 +3,50 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Buntralino+Vite sample app</title>
-  <script type="module" crossorigin src="/assets/index-CnwcmPvZ.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BL5dumNo.css">
+    <title></title> <!-- Inicialmente vacío -->
+    <link rel="stylesheet" href="/index.css">
+  <script type="module" crossorigin src="/assets/index-C3rjY_sa.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-JIUNXpB2.css">
 </head>
 
 <body>
-    <div id="neutralinoapp">
-        <img src="/icon.png" class="logo" alt="Buntralino logo" />
-        <h1>Buntralino + Vite</h1>
+    <dialog-container id="fileDialog">
+        <div class="modal__container">
+            <h2>Seleccionar archivo</h2>
+            <form action="">
+                <c-input name="episode" id="episode" type="number" placeholder="Número" value="1"></c-input>
+                <c-input name="title" id="title" type="text" placeholder="Título" value="Título"></c-input>
+                <c-input name="description" id="description" type="text" placeholder="Descripción" value="Descripción"></c-input>
+                <c-input name="image" id="image" type="text" placeholder="Imagen" value="Imagen"></c-input>
+                <c-input name="duration" id="duration" type="number" placeholder="Duración" value="10"></c-input>
+                <c-input name="season_id" id="season_id" type="number" placeholder="Temporada" value="2"></c-input>
+                <c-input name="catalog_id" id="catalog_id" type="number" placeholder="Catálogo" value="3"></c-input>
+                <c-input name="FileInput" id="FileInput" type="File"></c-input>
 
+                <button type="submit">Subir archivo</button>
+            </form>
+        </div>
+    </dialog-container>
+    <button id="openFileDialog" onclick="document.getElementById('fileDialog')?.show()">
+        Abrir archivo
+    </button>
+<!--
+    <span>Obtener FilePath</span>
+     <input type="button" value="Abrir archivo" onclick="window.onFileUpload()">
+      -->
+      <video id="videoPlayer" controls crossorigin="anonymous">
+        <source src="initial-video-url/master.m3u8" type="application/x-mpegURL" />
+      </video>
+      
+    <div class="videoContainer">
+        <video id="player">
+  
+      </video>
     </div>
-    <div id="theBunCheck">
-        Checking Buntralino connection…
-        <span class="rotate">🐰</span>
-    </div>
-    <span id="window_location"></span>
-    <!-- Your app's bundled scripts -->
-    <input type="file" name="uploadFile" id="uploadFile" style="display: none" />
-    <label for="uploadFile">Upload file</label>
-    <div id="fileContent"></div>
-    <button onclick="window.onFileUpload()">Open file</button>
     <script>
-
-    </script>
-    <script>
-        const window_location = document.getElementById('window_location');
-        window_location.innerText = window.location.href;
+        // Establece el título como la URL actual
+        document.title = window.location.href;
+        console.log("Título original:", document.title);
     </script>
 </body>
 

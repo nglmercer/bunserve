@@ -10,3 +10,4 @@ src/processed_videos/*
 src/bun/videos/*
 bun.lockb
 src/videos/*
+app/assets/index*
