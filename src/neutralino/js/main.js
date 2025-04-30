@@ -49,3 +49,13 @@ function getFormData(keys) {
     }
     return data;
 }
+async function testFetch() {
+    // url /stream-resource/
+    const params = {
+        season: 222,
+        episode: 222
+    };
+    const response = await fetchapi.sendParams('/stream-resource/',params,params);
+    console.log('Response:',response);
+}
+testFetch()

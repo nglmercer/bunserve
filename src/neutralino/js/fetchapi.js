@@ -137,6 +137,18 @@ class FetchApi {
             body: formData
         }));
     }
+    async sendParams(url, params,data, contentType = 'application/json') {
+        // Convert params object to URL path segments
+        const paramValues = Object.values(params);
+        const urlWithParams = paramValues.length > 0 
+            ? `${url}${paramValues.join('/')}`
+            : url;
+
+        return this._interceptor(this.http.post(`${this.host}${urlWithParams}`, {
+            headers: this._authHeaders(contentType),
+            body: data
+        }));
+    }
 }
 
 const fetchapi = new FetchApi(actualBaseApi);
