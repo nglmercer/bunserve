@@ -5,7 +5,7 @@ import { convertToHls, VIDEOS_DIR } from '../hlsconvert';
 import { validateFields } from '../utils/verify';
 
 export interface UploadData {
-    number: number;
+    episode: number;
     title: string;
     description: string;
     image: string;
@@ -15,7 +15,7 @@ export interface UploadData {
 }
 
 const formDataVerify: UploadData = {
-    number: 0,
+    episode: 0,
     title: '',
     description: '',
     image: '',
@@ -84,7 +84,7 @@ type FormDataParserOptions = {
 
         // Parsear datos del formulario
         const formDataObj = parseFormData<UploadData>(formData, {
-            numberKeys: ['number', 'duration', 'catalog_id', 'season_id'],
+            numberKeys: ['episode', 'duration', 'catalog_id', 'season_id'],
             stringKeys: ['title', 'description', 'image']
         });        
 
@@ -95,7 +95,7 @@ type FormDataParserOptions = {
         const options = {
             validators: {
                 season_id: (value: any) => value > 0,
-                number: (value: any) => value > 0
+                episode: (value: any) => value > 0
             }
         };
 
@@ -119,7 +119,7 @@ type FormDataParserOptions = {
         const videoDir = join(VIDEOS_DIR, formDataObj.season_id.toString());
         await mkdir(videoDir, { recursive: true });
 
-        const tempPath = join(videoDir, `${formDataObj.number}_${file.name}`);
+        const tempPath = join(videoDir, `${formDataObj.episode}_${file.name}`);
         console.log(`Saving temporary video to: ${tempPath}`);
         await writeFile(tempPath, new Uint8Array(await file.arrayBuffer()));
         console.log(`Temporary video saved successfully.`);
@@ -128,6 +128,7 @@ type FormDataParserOptions = {
         const result = await convertToHls(tempPath, formDataObj);
 
         if (result) {
+            console.log('Inserting video to database...',formDataObj);
             db.insert('episodes', formDataObj);
         }
 

@@ -2,7 +2,7 @@
 
 export interface ResolutionInfo {
     name: string | any;
-    season?: number | string;
+    season_id?: number | string;
     episode?: number | string;
     size: string;
     bitrate: string;
@@ -49,14 +49,14 @@ export interface VideoMetadata {
 /*
 const taskData: {
     videoId: string;
-    season: number;
+    season_id: number;
     episode: number;
     originalWidth: number;
     originalHeight: number;
     bitrate: string;
     resolutions: {
         name: string;
-        season: number;
+        season_id: number;
         episode: number;
         size: string;
         bitrate: string;
@@ -65,7 +65,7 @@ const taskData: {
 }*/
 export interface TaskMetadata {
     videoId: string;
-    season: number | string;
+    season_id: number | string;
     episode: number | string;
     originalWidth: number;
     originalHeight: number;
@@ -91,7 +91,7 @@ export interface episodes {
     CreatedAt: string;
 }
 export interface UploadData {
-    number: number;
+    episode: number;
     title: string;
     description: string;
     image: string;

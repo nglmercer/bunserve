@@ -37,14 +37,14 @@ export const convertToHls = async (
     // Create a task
     const taskData = {
       videoId,
-      season: formDataObj.season_id,
+      season_id: formDataObj.season_id,
       episode: formDataObj.number,
       originalWidth,
       originalHeight,
       bitrate: originalBitrateStr,
       resolutions: [{
         name: `${originalHeight}p`,
-        season: formDataObj.season_id,
+        season_id: formDataObj.season_id,
         episode: formDataObj.number,
         size: `${originalWidth}x${originalHeight}`,
         bitrate: originalBitrateStr,
@@ -108,7 +108,7 @@ export const convertToHls = async (
       ...taskData,
       resolutions: successfulResults.map(res => ({
         name: res.name,
-        season: formDataObj.season_id,
+        season_id: formDataObj.season_id,
         episode: formDataObj.number,
         size: res.size,
         bitrate: res.bitrate,

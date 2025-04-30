@@ -57,7 +57,7 @@ export const determineTargetResolutions = (
     if (isDifferent) {
       targetResolutions.push({
         name: originalResName,
-        season: userDefinedResolutions[0]?.season,
+        season_id: userDefinedResolutions[0]?.season_id,
         episode: userDefinedResolutions[0]?.episode,
         size: `${originalWidth}x${originalHeight}`,
         bitrate: originalBitrateStr,

@@ -614,7 +614,7 @@ export const db = new DatabaseController();
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       catalog_id INTEGER NOT NULL,
       season_id INTEGER NOT NULL,
-      episode_number INTEGER NOT NULL,
+      episode INTEGER NOT NULL,
       title TEXT NOT NULL,
       description TEXT,
       image TEXT,
