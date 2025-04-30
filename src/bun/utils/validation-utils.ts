@@ -25,7 +25,7 @@ export const validateVideoFilePath = (filePath: string): boolean => {
 /**
  * Validates video ID
  */
-export const validateVideoId = (videoId: string): boolean => {
+export const validateVideoRelativePath = (videoId: string): boolean => {
   if (!videoId || typeof videoId !== 'string') {
     throw new Error('Invalid video ID');
   }

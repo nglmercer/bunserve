@@ -64,7 +64,8 @@ const taskData: {
     }[];
 }*/
 export interface TaskMetadata {
-    videoId: string;
+    videoId?: string;
+    outputDir?: string;
     season_id: number | string;
     episode: number | string;
     originalWidth: number;

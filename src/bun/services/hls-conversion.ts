@@ -4,73 +4,116 @@ import type * as Types from '../types/index';
 import { defaultHlsOptions } from '../config/default-options';
 import { createOutputDirectory } from '../utils/fs-utils';
 import { getVideoMetadata, processResolution } from '../utils/ffmpeg-utils';
-import { validateVideoFilePath, validateVideoId, determineTargetResolutions } from '../utils/validation-utils';
+import { validateVideoFilePath, validateVideoRelativePath, determineTargetResolutions } from '../utils/validation-utils';
 import { createMasterPlaylist } from '../utils/playlist-utils';
 import { createConversionTask, updateTaskStatus, completeTask, failTask } from '../utils/task-utils';
 
 /**
- * Main function to convert a video to HLS format
+ * Validates inputs and prepares data for HLS conversion
  */
-export const convertToHls = async (
+export const prepareHlsConversion = async (
   inputPath: string,
-  formDataObj: Types.UploadData,
+  data: Types.UploadData,
   userOptions: Partial<Types.HlsOptions> = {}
-): Promise<Types.ConversionResult> => {
+): Promise<{
+  validatedPath: string;
+  videoRelativePath: string;
+  options: Types.HlsOptions;
+  outputDir: string;
+  taskId: string;
+  videoMetadata: {
+    originalWidth: number;
+    originalHeight: number;
+    originalBitrateStr: string;
+  };
+  taskData: any;
+  targetResolutions: Types.ResolutionInfo[];
+}> => {
   // Validate inputs
-  const videoId = `${formDataObj.season_id}/${formDataObj.number}`;
+  const videoRelativePath = `${data.season_id}/${data.episode}`;
   validateVideoFilePath(inputPath);
-  validateVideoId(videoId);
+  validateVideoRelativePath(videoRelativePath);
   
   // Merge options with defaults
   const options: Types.HlsOptions = { ...defaultHlsOptions, ...userOptions };
 
-  let taskId: string | null = null;
+  // Create output directory
+  const outputDir = await createOutputDirectory(videoRelativePath);
+
+  // Get video metadata
+  const { width: originalWidth, height: originalHeight, bitrateStr: originalBitrateStr } =
+    await getVideoMetadata(inputPath);
+
+  // Create a task
+  const taskData = {
+    outputDir,
+    season_id: data.season_id,
+    episode: data.episode,
+    originalWidth,
+    originalHeight,
+    bitrate: originalBitrateStr,
+    resolutions: [{
+      name: `${originalHeight}p`,
+      season_id: data.season_id,
+      episode: data.episode,
+      size: `${originalWidth}x${originalHeight}`,
+      bitrate: originalBitrateStr,
+      isOriginal: true
+    }]
+  };
+  
+  const taskId = createConversionTask(taskData);
+
+  console.log(`[${videoRelativePath}] Original resolution: ${originalWidth}x${originalHeight}, Bitrate: ${originalBitrateStr}`);
+
+  // Determine target resolutions
+  const targetResolutions = determineTargetResolutions(
+    originalWidth,
+    originalHeight,
+    originalBitrateStr,
+    options.resolutions
+  );
+
+  console.log(`[${videoRelativePath}] Target resolutions:`, targetResolutions.map(r => r.name));
+
+  return {
+    validatedPath: inputPath,
+    videoRelativePath,
+    options,
+    outputDir,
+    taskId,
+    videoMetadata: {
+      originalWidth,
+      originalHeight,
+      originalBitrateStr
+    },
+    taskData,
+    targetResolutions
+  };
+};
+
+/**
+ * Processes the actual HLS conversion using prepared data
+ */
+async function processHlsConversion(
+  prepared: ReturnType<typeof prepareHlsConversion> extends Promise<infer T> ? T : never
+): Promise<Types.ConversionResult> {
+  const {
+    validatedPath: inputPath,
+    videoRelativePath,
+    options,
+    outputDir,
+    taskId,
+    taskData,
+    targetResolutions
+  } = await prepared;
 
   try {
-    // Create output directory
-    const outputDir = await createOutputDirectory(videoId);
-
-    // Get video metadata
-    const { width: originalWidth, height: originalHeight, bitrateStr: originalBitrateStr } =
-      await getVideoMetadata(inputPath);
-
-    // Create a task
-    const taskData = {
-      videoId,
-      season_id: formDataObj.season_id,
-      episode: formDataObj.number,
-      originalWidth,
-      originalHeight,
-      bitrate: originalBitrateStr,
-      resolutions: [{
-        name: `${originalHeight}p`,
-        season_id: formDataObj.season_id,
-        episode: formDataObj.number,
-        size: `${originalWidth}x${originalHeight}`,
-        bitrate: originalBitrateStr,
-        isOriginal: true
-      }]
-    };
-    
-    taskId = createConversionTask(taskData);
-
-    console.log(`[${videoId}] Original resolution: ${originalWidth}x${originalHeight}, Bitrate: ${originalBitrateStr}`);
-
-    // Determine target resolutions
-    const targetResolutions = determineTargetResolutions(
-      originalWidth,
-      originalHeight,
-      originalBitrateStr,
-      options.resolutions
-    );
-
-    console.log(`[${videoId}] Target resolutions:`, targetResolutions.map(r => r.name));
-
     // Process each resolution
     updateTaskStatus('processing', taskId);
 
     const processingPromises = targetResolutions.map(resInfo =>
-      processResolution(inputPath, outputDir, resInfo, options, videoId)
+      processResolution(inputPath, outputDir, resInfo, options, videoRelativePath)
     );
 
     // Wait for all resolutions to be processed
@@ -85,7 +128,7 @@ export const convertToHls = async (
         successfulResults.push(result.value);
       } else {
         errors.push(result.reason as Error);
-        console.error(`[${videoId}] A resolution processing task failed:`,
+        console.error(`[${videoRelativePath}] A resolution processing task failed:`,
           result.reason instanceof Error ? result.reason.message : String(result.reason));
       }
     });
@@ -101,15 +144,15 @@ export const convertToHls = async (
 
     // Create master playlist
     const { masterPlaylistPath, masterPlaylistUrl } =
-      await createMasterPlaylist(outputDir, successfulResults, options, videoId);
+      await createMasterPlaylist(outputDir, successfulResults, options, videoRelativePath);
 
     // Update task with final resolutions
     const finalTaskData = {
       ...taskData,
       resolutions: successfulResults.map(res => ({
         name: res.name,
-        season_id: formDataObj.season_id,
-        episode: formDataObj.number,
+        season_id: taskData.season_id,
+        episode: taskData.episode,
         size: res.size,
         bitrate: res.bitrate,
         isOriginal: res.isOriginal || false,
@@ -120,7 +163,7 @@ export const convertToHls = async (
     
     // Complete task with updated data
     const result = completeTask(taskId);
-    console.log(`[${videoId}] HLS conversion completed successfully.`, result);
+    console.log(`[${videoRelativePath}] HLS conversion completed successfully.`, result);
     /* db.insert('episodes', result); */
     
     // Return result
@@ -129,17 +172,35 @@ export const convertToHls = async (
       outputDir,
       masterPlaylistPath,
       masterPlaylistUrl,
-      result:{ ...result, ...finalTaskData }
+      result: { ...result, ...finalTaskData }
     };
 
   } catch (error) {
     // Handle errors
-    console.error(`[${videoId}] Error during HLS conversion process:`,
+    console.error(`[${videoRelativePath}] Error during HLS conversion process:`,
       error instanceof Error ? error.message : String(error));
-    if (taskId) {
-      failTask(taskId, error instanceof Error ? error : new Error(String(error)));
-    }
+    failTask(taskId, error instanceof Error ? error : new Error(String(error)));
+    throw error;
+  }
+}
 
+/**
+ * Main function to convert a video to HLS format
+ */
+export const convertToHls = async (
+  inputPath: string,
+  data: Types.UploadData,
+  userOptions: Partial<Types.HlsOptions> = {}
+): Promise<Types.ConversionResult> => {
+  try {
+    // Step 1: Prepare the conversion (validate inputs and gather metadata)
+    const prepared = await prepareHlsConversion(inputPath, data, userOptions);
+    
+    // Step 2: Process the actual conversion
+    return await processHlsConversion(prepared);
+  } catch (error) {
+    console.error('HLS conversion failed:', 
+      error instanceof Error ? error.message : String(error));
     throw error;
   }
 };
