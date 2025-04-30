@@ -1,10 +1,10 @@
-// src/utils/playlist-utils.ts
 import path from 'path';
 import { promises as fs } from 'fs';
+import { parse, types, stringify } from 'hls-parser';
 import { type ResolutionInfo, type HlsOptions } from '../types';
 
 /**
- * Creates a master M3U8 playlist from the processed resolutions
+ * Creates a master M3U8 playlist from the processed resolutions using hls-parser
  */
 export const createMasterPlaylist = async (
   outputDir: string, 
@@ -26,14 +26,35 @@ export const createMasterPlaylist = async (
     (a.bandwidth || 0) - (b.bandwidth || 0)
   );
   
-  // Create the master playlist content
-  let masterPlaylistContent = '#EXTM3U\n#EXT-X-VERSION:3\n';
-  
-  sortedResolutions.forEach(res => {
-    const relativePath = `${proxyBaseUrl}${res.playlistRelativePath}\n`;
-    masterPlaylistContent += `#EXT-X-STREAM-INF:BANDWIDTH=${res.bandwidth},RESOLUTION=${res.size}\n`;
-    masterPlaylistContent += relativePath;
+  // Create a new master playlist object
+  const masterPlaylist = new types.MasterPlaylist({
+    version: 3,
+    variants: []
   });
+  
+  // Add each resolution as a variant
+  sortedResolutions.forEach(res => {
+    const relativePath = `${proxyBaseUrl}${res.playlistRelativePath}`;
+    
+    // Parse resolution string (e.g., "1280x720") into width and height
+    const [width, height] = res.size.split('x').map(num => parseInt(num, 10));
+    
+    // Create a new variant
+    const variant = new types.Variant({
+      uri: relativePath,
+      bandwidth: res.bandwidth,
+      resolution: {
+        width,
+        height
+      }
+    });
+    
+    // Add the variant to the master playlist
+    masterPlaylist.variants.push(variant);
+  });
+  
+  // Convert the master playlist object to M3U8 string
+  const masterPlaylistContent = stringify(masterPlaylist);
   
   // Write the master playlist file
   const masterPlaylistPath = path.join(outputDir, options.masterPlaylistName);
@@ -45,10 +66,6 @@ export const createMasterPlaylist = async (
     masterPlaylistUrl: `${proxyBaseUrl}${options.masterPlaylistName}`
   };
 };
-
-/**
- * Generates full playlist URLs
- */
 export const generatePlaylistUrl = (
   proxyBaseUrl: string,
   playlistName: string
