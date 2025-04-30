@@ -1,9 +1,13 @@
 // src/services/hls-conversion.ts
-
 import type * as Types from '../types/index';
 import { defaultHlsOptions } from '../config/default-options';
 import { createOutputDirectory } from '../utils/fs-utils';
-import { getVideoMetadata, processResolution } from '../utils/ffmpeg-utils';
+import {
+  getVideoMetadata, // Might still be useful for logging original info
+  processResolution,
+  checkMediaType,    // <-- Import checkMediaType
+  generateAudioHls // <-- Import the new function
+} from '../utils/ffmpeg-utils';
 import { validateVideoFilePath, validateVideoRelativePath, determineTargetResolutions } from '../utils/validation-utils';
 import { createMasterPlaylist } from '../utils/playlist-utils';
 import { createConversionTask, updateTaskStatus, completeTask, failTask } from '../utils/task-utils';
@@ -204,3 +208,155 @@ export const convertToHls = async (
     throw error;
   }
 };
+/*
+export const prepareAudioHlsConversion = async (
+  inputPath: string,
+  data: Types.UploadData, // Reuse UploadData or create specific type if needed
+  userOptions: Partial<Types.HlsOptions> = {}
+): Promise<{
+  validatedPath: string;
+  audioId: string; // Identifier for audio
+  options: Types.HlsOptions;
+  outputDir: string;
+  taskId: string;
+  taskData: any;
+}> => {
+  // Validate inputs
+  const audioId = `${data.season_id}/${data.episode}`; // Use same identifier convention
+  validateVideoFilePath(inputPath); // Reuse validation for file path
+  validateVideoRelativePath(audioId); // Reuse validation for relative path format
+
+  // Check if the file is actually processable audio/video
+  const mediaType = await checkMediaType(inputPath);
+   if (mediaType !== 'audio' && mediaType !== 'video') {
+        throw new Error(`Input file '${inputPath}' is not a valid audio or video file (type: ${mediaType}). Cannot create audio HLS.`);
+   }
+   if (mediaType === 'error') {
+        throw new Error(`Failed to check media type for '${inputPath}' due to an ffprobe error.`);
+   }
+   console.log(`[AudioHLS ${audioId}] Input file type detected: ${mediaType}`);
+
+
+  // Merge options with defaults (using the same defaults for now)
+  const options: Types.HlsOptions = { ...defaultHlsOptions, ...userOptions };
+
+  // Create output directory (using the same function)
+  const outputDir = await createOutputDirectory(audioId); // e.g., /output/public/videos/s1/e1
+
+  // --- Optional: Get original metadata for logging/task ---
+  let originalMetadata = { audioDetected: true }; // Basic info
+  try {
+      // Try getting video metadata if it's video, otherwise just note audio
+      if (mediaType === 'video') {
+          const { width, height, bitrateStr } = await getVideoMetadata(inputPath);
+          originalMetadata = { ...originalMetadata, width, height, bitrateStr };
+      } else {
+          // Maybe use ffprobe again to get audio-specific metadata if needed
+          // For now, just mark as audio
+      }
+  } catch (metaError: any) {
+      console.warn(`[AudioHLS ${audioId}] Could not get full metadata: ${metaError.message}`);
+  }
+
+
+  // Create a task (adjust task data structure as needed for audio)
+  const taskData = {
+    inputType: mediaType,
+    outputType: 'audio-hls',
+    outputDir,
+    season_id: data.season_id,
+    episode: data.episode,
+    targetAudioCodec: options.audioCodec || defaultHlsOptions.audioCodec,
+    targetAudioBitrate: options.audioBitrate || defaultHlsOptions.audioBitrate,
+    ...originalMetadata // Include any gathered metadata
+  };
+
+  const taskId = createConversionTask(taskData); // Use the same task creation util
+
+  console.log(`[AudioHLS ${audioId}] Prepared for Audio HLS conversion. Task ID: ${taskId}`);
+
+  return {
+    validatedPath: inputPath,
+    audioId,
+    options,
+    outputDir,
+    taskId,
+    taskData,
+  };
+};
+
+
+async function processAudioHlsConversion(
+  prepared: ReturnType<typeof prepareAudioHlsConversion> extends Promise<infer T> ? T : never
+): Promise<Types.AudioHlsResult> { // Use a specific result type if defined
+  const {
+    validatedPath: inputPath,
+    audioId,
+    options,
+    outputDir,
+    taskId,
+    taskData
+  } = await prepared; // Await the promise from prepareAudioHlsConversion
+
+  try {
+    updateTaskStatus('processing', taskId);
+
+    console.log(`[AudioHLS ${audioId}] Starting audio segmentation...`);
+
+    // Call the core ffmpeg utility function
+    const { playlistPath, playlistRelativePath } = await generateAudioHls(
+        inputPath,
+        outputDir, // Pass the base output dir (e.g., /output/public/videos/s1/e1)
+        options,
+        audioId
+    );
+
+    // Update task data with result paths
+    const finalTaskData = {
+        ...taskData,
+        playlistPath, // Absolute path on server
+        playlistRelativePath // Path relative to outputDir base (e.g., audio/audio.m3u8)
+    };
+
+    // Complete task
+    const result = completeTask(taskId); // Assuming completeTask returns the final task object
+    console.log(`[AudioHLS ${audioId}] Audio HLS conversion completed successfully.`);
+    // Optionally save finalTaskData or result to DB here
+
+    return {
+      message: 'Audio HLS conversion successful',
+      outputDir,
+      playlistPath,
+      playlistRelativePath,
+      result: { ...result, ...finalTaskData } // Combine task result and final data
+    };
+
+  } catch (error) {
+    console.error(`[AudioHLS ${audioId}] Error during audio HLS conversion process:`,
+      error instanceof Error ? error.message : String(error));
+    failTask(taskId, error instanceof Error ? error : new Error(String(error))); // Mark task as failed
+    throw error; // Re-throw error for the caller
+  }
+}
+
+
+
+export const convertToAudioHls = async (
+  inputPath: string,
+  data: Types.UploadData,
+  userOptions: Partial<Types.HlsOptions> = {}
+): Promise<Types.AudioHlsResult> => { // Return specific result type
+  try {
+    // Step 1: Prepare the conversion
+    const prepared = await prepareAudioHlsConversion(inputPath, data, userOptions);
+
+    // Step 2: Process the actual conversion
+    return await processAudioHlsConversion(prepared);
+  } catch (error) {
+    console.error(`[AudioHLS] Conversion failed for ${data.season_id}/${data.episode}:`,
+      error instanceof Error ? error.message : String(error));
+    // Ensure error is thrown so caller knows it failed
+    throw error;
+  }
+};
+*/

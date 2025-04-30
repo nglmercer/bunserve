@@ -34,7 +34,14 @@ const app = new Elysia()
       return new Response("Internal Server Error", { status: 500 });
     }
   })
-  
+  .post('/update/:audio', async ({ request, params }) => {
+    try {
+    //  return await handleUpload(request, params.audio);
+    } catch (error) {
+      console.error("Error handling upload:", error);
+      return new Response("Internal Server Error", { status: 500 });
+    }
+  })
   // Ruta para streaming con parámetro dinámico
   .get('/stream-resource/:season/:episode', async ({ request, params }) => {
     try {
@@ -44,7 +51,7 @@ const app = new Elysia()
       return new Response("Internal Server Error", { status: 500 });
     }
   })
-  .get('/stream-list/:season/:episode/:quality/:file', async ({ request, params }) => {
+  .get('/stream-resource/:season/:episode/:quality/:file', async ({ request, params }) => {
     try {
       return await getStreamPlaylist(request, params);
     } catch (error) {
