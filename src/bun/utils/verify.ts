@@ -106,9 +106,17 @@ function validateFields({ required, actualObj, options = {} }: ValidateParams): 
 
     return validationResults;
 }
-
+function templateError(success: boolean, message: string, ...args: any[]): string {
+    const ErrorJson = {
+        success,
+        message,
+        ...args
+    };
+    return JSON.stringify(ErrorJson);
+}
 export {
     exactcompareObjectKeys,
     filterRequiredFields,
-    validateFields
+    validateFields,
+    templateError
 }

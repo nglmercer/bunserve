@@ -1,9 +1,10 @@
 // src/index.ts
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
+import { staticPlugin } from '@elysiajs/static'
 import { mkdir } from 'fs/promises';
 import { handleUpload } from './routes/upload'; // Importa el manejador de upload
-import { getStream } from './routes/streamhtl'; // Importa el manejador de streaming
+import { getStream,getStreamPlaylist } from './routes/streamhtl'; // Importa el manejador de streaming
 import { VIDEOS_DIR } from './hlsconvert'; // Importa para acceder a VIDEOS_DIR
 
 const PORT = 4000;
@@ -35,21 +36,28 @@ const app = new Elysia()
   })
   
   // Ruta para streaming con parámetro dinámico
-  .post('/stream-resource/:season/:episode', async ({ request, params, body }) => {
+  .get('/stream-resource/:season/:episode', async ({ request, params }) => {
     try {
-      return await getStream(request, params,body);
+      return await getStream(request, params);
     } catch (error) {
       console.error("Error handling stream:", error);
       return new Response("Internal Server Error", { status: 500 });
     }
   })
-  
+  .get('/stream-list/:season/:episode/:quality/:file', async ({ request, params }) => {
+    try {
+      return await getStreamPlaylist(request, params);
+    } catch (error) {
+      console.error("Error handling stream:", error);
+      return new Response("Internal Server Error", { status: 500 });
+    }
+  })
   // Manejo de errores global
   .onError(({ error }) => {
     console.error("Server error:", error);
     return new Response("¡Ups! Algo salió mal en el servidor.", { status: 500 });
   })
-  
+  .use(staticPlugin())
   // Fallback para rutas no encontradas
   .all('*', () => new Response("Ruta no encontrada.", { status: 404 }))
   

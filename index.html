@@ -6,6 +6,7 @@
     <title></title> <!-- Inicialmente vacío -->
     <link rel="stylesheet" href="/index.css">
     <script type="module" src="/src/neutralino/index.ts"></script>
+    <script type="module" src="/src/neutralino/js/player.js"></script>
 </head>
 
 <body>
@@ -33,7 +34,15 @@
     <span>Obtener FilePath</span>
      <input type="button" value="Abrir archivo" onclick="window.onFileUpload()">
       -->
-
+      <video id="videoPlayer" controls crossorigin="anonymous">
+        <source src="initial-video-url/master.m3u8" type="application/x-mpegURL" />
+      </video>
+      
+    <div class="videoContainer">
+        <video id="player">
+  
+      </video>
+    </div>
     <script>
         // Establece el título como la URL actual
         document.title = window.location.href;

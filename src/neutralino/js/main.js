@@ -49,13 +49,15 @@ function getFormData(keys) {
     }
     return data;
 }
+const baseUrl = "http://localhost:4000/stream-resource/";
+
 async function testFetch() {
     // url /stream-resource/
     const params = {
-        season: 222,
-        episode: 222
+        season: 1,
+        episode: 1
     };
-    const response = await fetchapi.sendParams('/stream-resource/',params,params);
+    const response = await fetch('/stream-resource/1/1',params,params);
     console.log('Response:',response);
 }
 testFetch()
