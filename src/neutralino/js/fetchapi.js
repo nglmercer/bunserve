@@ -137,6 +137,15 @@ class FetchApi {
             body: formData
         }));
     }
+    async uploadFileAudio(formData) {
+        return this._interceptor(fetch(`${this.host}/uploadAudio`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `${this.token}`
+            },
+            body: formData
+        }));
+    }
     async sendParams(url, params,data, contentType = 'application/json') {
         // Convert params object to URL path segments
         const paramValues = Object.values(params);

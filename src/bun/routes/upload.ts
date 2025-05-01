@@ -1,7 +1,8 @@
 import { join } from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 import { db } from '../data/ibd';
-import { convertToHls, VIDEOS_DIR } from '../hlsconvert';
+import { convertToHls, convertToAudioHls } from '../services/hls-conversion';
+import { VIDEOS_DIR, PROCESSED_DIR } from '../utils/fs-utils';
 import { validateFields } from '../utils/verify';
 
 export interface UploadData {
@@ -67,7 +68,7 @@ type FormDataParserOptions = {
     return result;
   }
 
-  export async function handleUpload(req: Request): Promise<Response> {
+  export async function handleUpload(req: Request,type="video"): Promise<Response> {
     if (req.method !== 'POST') {
         return new Response('Method Not Allowed', { status: 405 });
     }
@@ -123,9 +124,13 @@ type FormDataParserOptions = {
         console.log(`Saving temporary video to: ${tempPath}`);
         await writeFile(tempPath, new Uint8Array(await file.arrayBuffer()));
         console.log(`Temporary video saved successfully.`);
-
+        let result
         // Iniciar conversión a HLS
-        const result = await convertToHls(tempPath, formDataObj);
+        if (type=="video"){
+          result = await convertToHls(tempPath, formDataObj);
+        } else {
+          result = await convertToAudioHls(tempPath, formDataObj);
+        }
 
         if (result) {
             console.log('Inserting video to database...',formDataObj);

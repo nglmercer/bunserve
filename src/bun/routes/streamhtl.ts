@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { db } from '../data/ibd';
-import { PROCESSED_DIR } from '../hlsconvert';
+import { VIDEOS_DIR, PROCESSED_DIR } from '../utils/fs-utils';
 import { validateFields, templateError } from '../utils/verify';
 
 export async function getStream(req: Request, params: any): Promise<Response> {

@@ -32,7 +32,7 @@ FileInput.addEventListener('change',async function (e) {
         actualObj: data2
     });
     console.log('ValidateOBJ:', validateOBJ,data2);
-    const response = await fetchapi.uploadFile(formData);
+    const response = await fetchapi.uploadFileAudio(formData);
     console.log('Response:', response); 
     /*
     */

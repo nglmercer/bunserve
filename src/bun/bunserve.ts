@@ -5,7 +5,7 @@ import { staticPlugin } from '@elysiajs/static'
 import { mkdir } from 'fs/promises';
 import { handleUpload } from './routes/upload'; // Importa el manejador de upload
 import { getStream,getStreamPlaylist } from './routes/streamhtl'; // Importa el manejador de streaming
-import { VIDEOS_DIR } from './hlsconvert'; // Importa para acceder a VIDEOS_DIR
+import { VIDEOS_DIR } from './utils/fs-utils';
 
 const PORT = 4000;
 console.log('Starting Elysia server...');
@@ -34,9 +34,9 @@ const app = new Elysia()
       return new Response("Internal Server Error", { status: 500 });
     }
   })
-  .post('/update/:audio', async ({ request, params }) => {
+  .post('/uploadAudio', async ({ request }) => {
     try {
-    //  return await handleUpload(request, params.audio);
+     return await handleUpload(request, "audio");
     } catch (error) {
       console.error("Error handling upload:", error);
       return new Response("Internal Server Error", { status: 500 });

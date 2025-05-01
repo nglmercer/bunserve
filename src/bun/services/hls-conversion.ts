@@ -208,7 +208,7 @@ export const convertToHls = async (
     throw error;
   }
 };
-/*
+
 export const prepareAudioHlsConversion = async (
   inputPath: string,
   data: Types.UploadData, // Reuse UploadData or create specific type if needed
@@ -231,9 +231,6 @@ export const prepareAudioHlsConversion = async (
    if (mediaType !== 'audio' && mediaType !== 'video') {
         throw new Error(`Input file '${inputPath}' is not a valid audio or video file (type: ${mediaType}). Cannot create audio HLS.`);
    }
-   if (mediaType === 'error') {
-        throw new Error(`Failed to check media type for '${inputPath}' due to an ffprobe error.`);
-   }
    console.log(`[AudioHLS ${audioId}] Input file type detected: ${mediaType}`);
 
 
@@ -245,18 +242,7 @@ export const prepareAudioHlsConversion = async (
 
   // --- Optional: Get original metadata for logging/task ---
   let originalMetadata = { audioDetected: true }; // Basic info
-  try {
-      // Try getting video metadata if it's video, otherwise just note audio
-      if (mediaType === 'video') {
-          const { width, height, bitrateStr } = await getVideoMetadata(inputPath);
-          originalMetadata = { ...originalMetadata, width, height, bitrateStr };
-      } else {
-          // Maybe use ffprobe again to get audio-specific metadata if needed
-          // For now, just mark as audio
-      }
-  } catch (metaError: any) {
-      console.warn(`[AudioHLS ${audioId}] Could not get full metadata: ${metaError.message}`);
-  }
+
 
 
   // Create a task (adjust task data structure as needed for audio)
@@ -288,7 +274,7 @@ export const prepareAudioHlsConversion = async (
 
 async function processAudioHlsConversion(
   prepared: ReturnType<typeof prepareAudioHlsConversion> extends Promise<infer T> ? T : never
-): Promise<Types.AudioHlsResult> { // Use a specific result type if defined
+): Promise<any> { // Use a specific result type if defined
   const {
     validatedPath: inputPath,
     audioId,
@@ -345,7 +331,7 @@ export const convertToAudioHls = async (
   inputPath: string,
   data: Types.UploadData,
   userOptions: Partial<Types.HlsOptions> = {}
-): Promise<Types.AudioHlsResult> => { // Return specific result type
+): Promise<any> => { // Return specific result type
   try {
     // Step 1: Prepare the conversion
     const prepared = await prepareAudioHlsConversion(inputPath, data, userOptions);
@@ -359,4 +345,3 @@ export const convertToAudioHls = async (
     throw error;
   }
 };
-*/

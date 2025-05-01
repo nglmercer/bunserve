@@ -5,7 +5,7 @@ import { fileuploadTaskQueue } from './queue';
 /**
  * Creates a new task for monitoring the conversion process
  */
-export const createConversionTask = (taskMetadata: TaskMetadata): string => {
+export const createConversionTask = (taskMetadata: TaskMetadata | any): string => {
   const taskId = fileuploadTaskQueue.addTask(taskMetadata);
   return taskId;
 };
