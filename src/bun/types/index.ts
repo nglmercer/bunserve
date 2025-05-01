@@ -99,4 +99,5 @@ export interface UploadData {
     duration: number;
     catalog_id: number;
     season_id: number;
+    lang?:string;
 }

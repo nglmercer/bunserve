@@ -9,7 +9,7 @@ import {
   generateAudioHls // <-- Import the new function
 } from '../utils/ffmpeg-utils';
 import { validateVideoFilePath, validateVideoRelativePath, determineTargetResolutions } from '../utils/validation-utils';
-import { createMasterPlaylist } from '../utils/playlist-utils';
+import { createMasterPlaylist,addMediaToMasterPlaylist } from '../utils/playlist-utils';
 import { createConversionTask, updateTaskStatus, completeTask, failTask } from '../utils/task-utils';
 
 /**
@@ -220,6 +220,7 @@ export const prepareAudioHlsConversion = async (
   outputDir: string;
   taskId: string;
   taskData: any;
+  lang?: string;
 }> => {
   // Validate inputs
   const audioId = `${data.season_id}/${data.episode}`; // Use same identifier convention
@@ -268,6 +269,7 @@ export const prepareAudioHlsConversion = async (
     outputDir,
     taskId,
     taskData,
+    lang:data.lang
   };
 };
 
@@ -281,7 +283,7 @@ async function processAudioHlsConversion(
     options,
     outputDir,
     taskId,
-    taskData
+    taskData,
   } = await prepared; // Await the promise from prepareAudioHlsConversion
 
   try {
@@ -308,7 +310,15 @@ async function processAudioHlsConversion(
     const result = completeTask(taskId); // Assuming completeTask returns the final task object
     console.log(`[AudioHLS ${audioId}] Audio HLS conversion completed successfully.`);
     // Optionally save finalTaskData or result to DB here
-
+    addMediaToMasterPlaylist(outputDir, audioId,[
+      {
+        lang: 'es',
+        name: 'Audio',
+        relativePath: playlistRelativePath,
+        isDefault: true,
+        autoselect: true
+      }
+    ]);
     return {
       message: 'Audio HLS conversion successful',
       outputDir,
@@ -324,7 +334,15 @@ async function processAudioHlsConversion(
     throw error; // Re-throw error for the caller
   }
 }
-
+/*
+interface MediaTrackInfo {
+  lang: string;
+  name: string;
+  relativePath: string;
+  isDefault?: boolean;
+  autoselect?: boolean;
+}
+*/
 
 
 export const convertToAudioHls = async (

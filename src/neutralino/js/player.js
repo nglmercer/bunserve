@@ -1,8 +1,16 @@
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
 import Hls from 'hls.js';
+
 const video = document.getElementById('videoPlayer');
-const player = new Plyr(video);
+
+// Configure Plyr with quality, subtitle and audio track options
+const player = new Plyr(video, {
+    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
+    settings: ['captions', 'quality', 'speed', 'loop'],
+    captions: { active: true, language: 'auto', update: true },
+    quality: { default: 576, options: [4320, 2880, 2160, 1440, 1080, 720, 576, 480, 360, 240] },
+});
 
 let hlsInstance = null;
 

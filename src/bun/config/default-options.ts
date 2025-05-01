@@ -1,7 +1,7 @@
 // src/config/default-options.ts
 import { type HlsOptions } from '../types/index';
 
-const BaseUrl = 'http://localhost:3000/stream-resource/';
+const BaseUrl = 'http://localhost:4000/stream-resource/';
 
 /**
  * Default options for HLS conversion

@@ -331,7 +331,8 @@ export const generateAudioHls = (
   inputPath: string,
   outputDir: string, // Base output directory (e.g., /path/to/output/season/episode)
   options: Types.HlsOptions & { audioPlaylistName?: string; audioSegmentNameTemplate?: string }, // Extend options type if needed
-  audioId: string
+  audioId: string,
+  lang:string = "default"
 ): Promise<{ playlistPath: string; playlistRelativePath: string }> => {
 
   return new Promise(async (resolve, reject) => {
@@ -345,10 +346,10 @@ export const generateAudioHls = (
           audioSegmentNameTemplate = 'segment%03d.aac'
       } = options;
 
-      const audioHlsDir = path.join(outputDir, 'audio'); // Specific subdir for audio HLS
+      const audioHlsDir = path.join(outputDir, 'audio_'+lang); 
       const playlistPath = path.join(audioHlsDir, audioPlaylistName);
       const segmentPath = path.join(audioHlsDir, audioSegmentNameTemplate); // Segments inside 'audio' dir
-      const playlistRelativePath = `audio/${audioPlaylistName}`; // Path relative to outputDir
+      const playlistRelativePath ="audio_"+lang+`/${audioPlaylistName}`; // Path relative to outputDir
 
       try {
           // Ensure the audio HLS directory exists

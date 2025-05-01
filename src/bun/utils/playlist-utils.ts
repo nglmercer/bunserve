@@ -2,10 +2,43 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { parse, types, stringify } from 'hls-parser';
 import { type ResolutionInfo, type HlsOptions } from '../types';
+import { defaultHlsOptions } from '../config/default-options';
 
-/**
- * Creates a master M3U8 playlist from the processed resolutions using hls-parser
- */
+// --- Constantes para Agrupar Pistas ---
+const AUDIO_GROUP_ID = 'aac-audio';
+const SUBTITLE_GROUP_ID = 'subs';
+
+// --- Tipos para Información de Pistas ---
+interface MediaTrackInfo {
+  lang: string;
+  name: string;
+  relativePath: string;
+  isDefault?: boolean;
+  autoselect?: boolean;
+}
+
+interface AudioTrackInfo extends MediaTrackInfo {}
+interface SubtitleTrackInfo extends MediaTrackInfo {
+  isForced?: boolean;
+}
+export const generatePlaylistUrl = (
+  proxyBaseUrl: string,
+  playlistName: string
+): string => {
+  return `${proxyBaseUrl}${playlistName}`;
+};
+export const generateProxyBaseUrl = (
+  videoId: string,
+  basePath?: string,
+  proxyBaseUrlTemplate: string= defaultHlsOptions.proxyBaseUrlTemplate,
+): string => {
+  // Ensure basePath ends with a trailing slash if provided
+  const newBasePath = basePath? (basePath.endsWith('/')? basePath : `${basePath}/`) : '';
+
+  return proxyBaseUrlTemplate
+   .replace('{videoId}', videoId)
+   .replace('{basePath}', newBasePath);
+};
 export const createMasterPlaylist = async (
   outputDir: string, 
   successfulResolutions: ResolutionInfo[], 
@@ -14,7 +47,7 @@ export const createMasterPlaylist = async (
   basePath: string = ''
 ): Promise<{ masterPlaylistPath: string; masterPlaylistUrl: string }> => {
   // Ensure basePath ends with a trailing slash if provided
-  const newBasePath = basePath ? (basePath.endsWith('/') ? basePath : `${basePath}/`) : '';
+  const newBasePath = generateProxyBaseUrl(videoId, basePath);
   
   // Generate the proxy base URL
   const proxyBaseUrl = options.proxyBaseUrlTemplate
@@ -66,9 +99,81 @@ export const createMasterPlaylist = async (
     masterPlaylistUrl: `${proxyBaseUrl}${options.masterPlaylistName}`
   };
 };
-export const generatePlaylistUrl = (
-  proxyBaseUrl: string,
-  playlistName: string
-): string => {
-  return `${proxyBaseUrl}${playlistName}`;
+
+export const addMediaToMasterPlaylist = async (
+  masterPlaylistPath: string,
+  videoId: string,
+  audioTracks: AudioTrackInfo[] = [],
+  subtitleTracks: SubtitleTrackInfo[] = []
+): Promise<void> => {
+  try {
+    const contentPath = masterPlaylistPath.endsWith('master.m3u8')
+      ? masterPlaylistPath
+      : path.join(masterPlaylistPath, 'master.m3u8');
+    const content = await fs.readFile(contentPath, 'utf-8');
+    const playlist = parse(content);
+
+    if (!(playlist instanceof types.MasterPlaylist)) {
+      throw new Error('El archivo no es un Master Playlist válido.');
+    }
+    const proxyBaseUrl = generateProxyBaseUrl(videoId);
+    // Limpiar media existente (opcional)
+    playlist.variants.forEach(v => {
+      v.audio = [];
+      v.subtitles = [];
+    });
+
+    // Agregar pistas de audio
+    audioTracks.forEach(track => {
+      const audioRendition = new types.Rendition({
+        type: 'AUDIO',
+        groupId: AUDIO_GROUP_ID,
+        language: track.lang,
+        name: track.name,
+        isDefault: track.isDefault ?? false,
+        autoselect: track.autoselect ?? true,
+        forced: false,
+        uri: `${proxyBaseUrl}${track.relativePath}`
+      });
+      
+      playlist.variants.forEach(v => {
+        v.audio.push(audioRendition as types.Rendition & { type: "AUDIO" });
+      });
+    });
+
+    // Agregar pistas de subtítulos
+    subtitleTracks.forEach(track => {
+      const subtitleRendition = new types.Rendition({
+        type: 'SUBTITLES',
+        groupId: SUBTITLE_GROUP_ID,
+        language: track.lang,
+        name: track.name,
+        isDefault: track.isDefault ?? false,
+        autoselect: track.autoselect ?? true,
+        forced: track.isForced ?? false,
+        uri: `${proxyBaseUrl}${track.relativePath}`
+      });
+      
+      playlist.variants.forEach(v => {
+        v.subtitles.push(subtitleRendition as types.Rendition & { type: "SUBTITLES" });
+      });
+    });
+
+    // Actualizar codecs para incluir audio si es necesario
+    playlist.variants.forEach(variant => {
+      if (audioTracks.length > 0) {
+        const defaultAudio = audioTracks.find(t => t.isDefault);
+        if (defaultAudio && variant.codecs && !variant.codecs.includes('mp4a')) {
+          variant.codecs += ',mp4a.40.2';
+        }
+      }
+    });
+
+    // Guardar cambios
+    await fs.writeFile(contentPath, stringify(playlist));
+    console.log(`Master playlist actualizado con ${audioTracks.length} audios y ${subtitleTracks.length} subtítulos.`);
+  } catch (error) {
+    console.error('Error al añadir media al master playlist:', error);
+    throw error;
+  }
 };
