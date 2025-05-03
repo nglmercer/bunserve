@@ -1,44 +1,59 @@
-import Plyr from 'plyr';
-import 'plyr/dist/plyr.css';
 import Hls from 'hls.js';
-
-const video = document.getElementById('videoPlayer');
-
-// Configure Plyr with quality, subtitle and audio track options
-const player = new Plyr(video, {
-    controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
-    settings: ['captions', 'quality', 'speed', 'loop'],
-    captions: { active: true, language: 'auto', update: true },
-    quality: { default: 576, options: [4320, 2880, 2160, 1440, 1080, 720, 576, 480, 360, 240] },
-});
-
-let hlsInstance = null;
-
-// Función para cargar un nuevo archivo M3U8
-function loadHlsSource(url) {
-  // Destruir instancia anterior si existe
-  if (hlsInstance) {
-    hlsInstance.destroy();
-  }
-
-  // Crear nueva instancia de Hls.js
-  if (Hls.isSupported()) {
-    hlsInstance = new Hls();
-    hlsInstance.loadSource(url);
-    hlsInstance.attachMedia(video);
-    
-    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-      video.play().catch(err => console.error("Error al reproducir:", err));
-    });
-  } else {
-    console.error("Hls.js no es compatible en este navegador.");
-  }
-}
-
-// Función para cambiar la fuente
-window.changeSource = function(newUrl) {
-  loadHlsSource(newUrl);
-}
+import videojs from 'video.js';
+let player = null;
 const baseUrl = "http://localhost:4000/stream-resource/";
-// Cargar fuente inicial
-loadHlsSource(baseUrl + "1/1");
+
+// Función para inicializar el reproductor Video.js
+function initializePlayer() {
+  // Verificar si ya existe un reproductor y destruirlo
+  if (player) {
+    player.dispose();
+  }
+
+  // Inicializar el reproductor con opciones
+  player = videojs('my-player', {
+    controls: true,
+    autoplay: true,
+    preload: 'auto',
+    fluid: true,
+    html5: {
+      vhs: {
+        overrideNative: true
+      },
+      nativeAudioTracks: false,
+      nativeVideoTracks: false,
+      hls: {
+        enableLowInitialPlaylist: true,
+        smoothQualityChange: true,
+        overrideNative: true
+      }
+    }
+  });
+
+  // Manejar errores
+  player.on('error', function() {
+    console.error('Error del reproductor:', player.error());
+  });
+
+  // Cargar la fuente inicial
+ loadSource(baseUrl + "1/1"); 
+//loadSource("https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8")
+}
+
+// Función para cargar una nueva fuente
+function loadSource(url) {
+  if (player) {
+    player.src({
+      src: url,
+      type: 'application/x-mpegURL' // Tipo MIME para archivos HLS
+    });
+    
+    // Intenta reproducir después de cargar la fuente
+    player.ready(function() {
+      player.play().catch(err => {
+        console.error("Error al reproducir:", err);
+      });
+    });
+  }
+}
+initializePlayer();

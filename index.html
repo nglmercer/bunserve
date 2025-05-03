@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title></title> <!-- Inicialmente vacío -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
     <link rel="stylesheet" href="/index.css">
     <script type="module" src="/src/neutralino/index.ts"></script>
     <script type="module" src="/src/neutralino/js/player.js"></script>
+    <link href="https://unpkg.com/video.js/dist/video-js.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/video.js/dist/video.min.js"></script>
 </head>
 
 <body>
@@ -34,13 +36,28 @@
     <span>Obtener FilePath</span>
      <input type="button" value="Abrir archivo" onclick="window.onFileUpload()">
       -->
-      <video id="videoPlayer" controls crossorigin="anonymous">
-        <source src="initial-video-url/master.m3u8" type="application/x-mpegURL" />
-      </video>
+<video
+    id="my-player"
+    class="video-js"
+    controls
+    preload="auto"
+    poster="//vjs.zencdn.net/v/oceans.png"
+    data-setup='{}'>
+  <source src="//vjs.zencdn.net/v/oceans.mp4" type="video/mp4"></source>
+  <source src="//vjs.zencdn.net/v/oceans.webm" type="video/webm"></source>
+  <source src="//vjs.zencdn.net/v/oceans.ogv" type="video/ogg"></source>
+  <p class="vjs-no-js">
+    To view this video please enable JavaScript, and consider upgrading to a
+    web browser that
+    <a href="https://videojs.com/html5-video-support/" target="_blank">
+      supports HTML5 video
+    </a>
+  </p>
+</video>
       
     <div class="videoContainer">
         <video id="player">
-  
+            <source src="http://localhost:4000/stream-resource/stream-resource/1/1" type="application/x-mpegURL" />
       </video>
     </div>
     <script>

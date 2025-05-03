@@ -4,18 +4,9 @@ import { db } from '../data/ibd';
 import { convertToHls, convertToAudioHls } from '../services/hls-conversion';
 import { VIDEOS_DIR, PROCESSED_DIR } from '../utils/fs-utils';
 import { validateFields } from '../utils/verify';
+import type * as Types from '../types/index';
 
-export interface UploadData {
-    episode: number;
-    title: string;
-    description: string;
-    image: string;
-    duration: number;
-    catalog_id: number;
-    season_id: number;
-}
-
-const formDataVerify: UploadData = {
+const formDataVerify: Types.UploadData = {
     episode: 0,
     title: '',
     description: '',
@@ -84,7 +75,7 @@ type FormDataParserOptions = {
         }
 
         // Parsear datos del formulario
-        const formDataObj = parseFormData<UploadData>(formData, {
+        const formDataObj = parseFormData<Types.UploadData>(formData, {
             numberKeys: ['episode', 'duration', 'catalog_id', 'season_id'],
             stringKeys: ['title', 'description', 'image']
         });        
@@ -134,7 +125,7 @@ type FormDataParserOptions = {
 
         if (result) {
             console.log('Inserting video to database...',formDataObj);
-            db.insert('episodes', formDataObj);
+            db.insert('episodes', formDataObj as Record<keyof Types.UploadData, unknown>);
         }
 
         return new Response(JSON.stringify({
