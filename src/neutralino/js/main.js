@@ -32,7 +32,7 @@ FileInput.addEventListener('change',async function (e) {
         actualObj: data2
     });
     console.log('ValidateOBJ:', validateOBJ,data2);
-    const response = await fetchapi.uploadFileAudio(formData);
+    const response = await fetchapi.uploadFile(formData);
     console.log('Response:', response); 
     /*
     */
@@ -51,7 +51,7 @@ function getFormData(keys) {
 }
 const baseUrl = "http://localhost:4000/stream-resource/";
 
-async function testFetch() {
+/* async function testFetch() {
     // url /stream-resource/
     const params = {
         season: 1,
@@ -60,4 +60,4 @@ async function testFetch() {
     const response = await fetch('/stream-resource/1/1',params,params);
     console.log('Response:',response);
 }
-testFetch()
+testFetch() */

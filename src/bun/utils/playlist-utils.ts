@@ -21,23 +21,53 @@ interface AudioTrackInfo extends MediaTrackInfo {}
 interface SubtitleTrackInfo extends MediaTrackInfo {
   isForced?: boolean;
 }
+const BaseUrl = 'http://localhost:4000/stream-resource/';
+
 export const generatePlaylistUrl = (
-  proxyBaseUrl: string,
+  proxyBaseUrl: string = BaseUrl, // Using BaseUrl as default
   playlistName: string
 ): string => {
-  return `${proxyBaseUrl}${playlistName}`;
+  // Handle null or undefined values
+  if (!proxyBaseUrl) proxyBaseUrl = BaseUrl;
+  
+  // Format proxyBaseUrl to ensure it ends with a slash if not empty
+  const formattedProxyBaseUrl = proxyBaseUrl 
+    ? (proxyBaseUrl.endsWith('/') ? proxyBaseUrl : `${proxyBaseUrl}/`) 
+    : '';
+  
+  return `${formattedProxyBaseUrl}${playlistName}`;
 };
+
 export const generateProxyBaseUrl = (
   videoId: string,
-  basePath?: string,
-  proxyBaseUrlTemplate: string= defaultHlsOptions.proxyBaseUrlTemplate,
+  basePath: string = BaseUrl, // Using BaseUrl as default
+  proxyBaseUrlTemplate: string = defaultHlsOptions.proxyBaseUrlTemplate
 ): string => {
-  // Ensure basePath ends with a trailing slash if provided
-  const newBasePath = basePath? (basePath.endsWith('/')? basePath : `${basePath}/`) : '';
-
-  return proxyBaseUrlTemplate
-   .replace('{videoId}', videoId)
-   .replace('{basePath}', newBasePath);
+  // Handle null or undefined values
+  if (!videoId) videoId = '';
+  if (!basePath) basePath = BaseUrl;
+  
+  // Format basePath to ensure it ends with a slash if not empty
+  const formattedBasePath = basePath 
+    ? (basePath.endsWith('/') ? basePath : `${basePath}/`) 
+    : '';
+  
+  // Apply template replacements
+  let url = proxyBaseUrlTemplate;
+  
+  // Replace all occurrences of videoId first (in case it's used multiple times)
+  url = url.replace(/\{videoId\}/g, videoId);
+  
+  // Replace basePath placeholder
+  url = url.replace(/\{basePath\}/g, formattedBasePath);
+  
+  // Clean up any double slashes that might have been created (except after protocol)
+  url = url.replace(/([^:])\/+/g, '$1/');
+  
+  // Preserve protocol double slashes if present
+  url = url.replace(/^([a-zA-Z]+):\/([^/])/, '$1://$2');
+  
+  return url;
 };
 export const createMasterPlaylist = async (
   outputDir: string, 

@@ -34,14 +34,16 @@ function initializePlayer() {
   player.on('error', function() {
     console.error('Error del reproductor:', player.error());
   });
-
+  const urlmaster = baseUrl + "1/1";
+  console.log("URL Master:",urlmaster);
   // Cargar la fuente inicial
- loadSource(baseUrl + "1/1"); 
+ loadSource(urlmaster); 
 //loadSource("https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8")
 }
 
 // Función para cargar una nueva fuente
 function loadSource(url) {
+  console.log("URL:",url);
   if (player) {
     player.src({
       src: url,

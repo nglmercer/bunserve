@@ -1,8 +1,6 @@
 // src/config/default-options.ts
 import { type HlsOptions } from '../types/index';
 
-const BaseUrl = 'http://localhost:4000/stream-resource/';
-
 /**
  * Default options for HLS conversion
  */
@@ -17,7 +15,7 @@ export const defaultHlsOptions: HlsOptions = {
   videoProfile: 'main',
   crf: 20,
   gopSize: 48,
-  proxyBaseUrlTemplate: BaseUrl + '{basePath}{videoId}/',
+  proxyBaseUrlTemplate: '{basePath}{videoId}/',
   masterPlaylistName: 'master.m3u8',
   segmentNameTemplate: 'segment%03d.ts',
   resolutionPlaylistName: 'playlist.m3u8'
