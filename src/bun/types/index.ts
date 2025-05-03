@@ -44,7 +44,9 @@ export interface ConversionResult {
 export interface VideoMetadata {
     width: number;
     height: number;
-    bitrateStr: string;
+    bitrateStr: string | number;
+    duration?: number | string;
+    codec_name?: string;
 }
 /*
 const taskData: {
@@ -101,4 +103,9 @@ export interface UploadData {
     season_id: number;
     lang?:string;
     name?:string;
+}
+export interface AudioExtractionOptions {
+    audioCodec?: string;    // e.g., 'libmp3lame', 'aac'
+    audioBitrate?: string;  // e.g., '192k', '128k'
+    outputFilename?: string;// Base name without extension
 }

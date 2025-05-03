@@ -28,7 +28,7 @@ export const prepareHlsConversion = async (
   videoMetadata: {
     originalWidth: number;
     originalHeight: number;
-    originalBitrateStr: string;
+    originalBitrateStr: number | string;
   };
   taskData: any;
   targetResolutions: Types.ResolutionInfo[];

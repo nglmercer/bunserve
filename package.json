@@ -25,7 +25,8 @@
     "hls-parser": "^0.13.5",
     "hls.js": "^1.6.2",
     "lit": "^3.3.0",
-    "micromodal": "^0.6.1"
+    "micromodal": "^0.6.1",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@neutralinojs/neu": "^11.3.0",

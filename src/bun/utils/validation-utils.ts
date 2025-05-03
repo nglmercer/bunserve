@@ -43,9 +43,9 @@ export const validateVideoRelativePath = (videoId: string): boolean => {
  * Determine target resolutions based on original video dimensions
  */
 export const determineTargetResolutions = (
-  originalWidth: number,
-  originalHeight: number,
-  originalBitrateStr: string,
+  originalWidth: string | number,
+  originalHeight: string | number,
+  originalBitrateStr: string | number,
   userDefinedResolutions: ResolutionInfo[],
 ): ResolutionInfo[] => {
   let targetResolutions = [...userDefinedResolutions];
@@ -60,7 +60,7 @@ export const determineTargetResolutions = (
         season_id: userDefinedResolutions[0]?.season_id,
         episode: userDefinedResolutions[0]?.episode,
         size: `${originalWidth}x${originalHeight}`,
-        bitrate: originalBitrateStr,
+        bitrate: `${originalBitrateStr}`,
         isOriginal: true
       });
       targetResolutions.sort((a, b) => parseInt(a.name) - parseInt(b.name));
