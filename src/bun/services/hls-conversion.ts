@@ -115,7 +115,8 @@ async function processHlsConversion(
   try {
     // Process each resolution
     updateTaskStatus('processing', taskId);
-
+    console.info("services",`[HLS ${videoRelativePath}] Starting processing of resolutions.`);
+    console.info("services",`[HLS ${videoRelativePath}] Processing resolution`,targetResolutions);
     const processingPromises = targetResolutions.map(resInfo =>
       processResolution(inputPath, outputDir, resInfo, options, videoRelativePath)
     );
@@ -149,7 +150,7 @@ async function processHlsConversion(
     // Create master playlist
     const { masterPlaylistPath, masterPlaylistUrl } =
       await createMasterPlaylist(outputDir, successfulResults, options, videoRelativePath);
-
+    console.log("services",`[HLS ${videoRelativePath}] Master playlist created successfully.`,outputDir, successfulResults, options, videoRelativePath);
     // Update task with final resolutions
     const finalTaskData = {
       ...taskData,
@@ -164,7 +165,7 @@ async function processHlsConversion(
         playlistRelativePath: res.playlistRelativePath
       }))
     };
-    
+    console.log("services", `[HLS ${videoRelativePath}] Completed task with updated data.`, finalTaskData);
     // Complete task with updated data
     const result = completeTask(taskId);
     console.log(`[${videoRelativePath}] HLS conversion completed successfully.`, result);
@@ -334,15 +335,6 @@ async function processAudioHlsConversion(
     throw error; // Re-throw error for the caller
   }
 }
-/*
-interface MediaTrackInfo {
-  lang: string;
-  name: string;
-  relativePath: string;
-  isDefault?: boolean;
-  autoselect?: boolean;
-}
-*/
 
 
 export const convertToAudioHls = async (

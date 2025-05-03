@@ -5,32 +5,8 @@ import type * as Types from '../types/index'; // Assuming your types are here
 import path from 'path';
 import fs from 'fs/promises'; // Using promises version of fs
 
-import winston from 'winston';
 // Configure ffmpeg to use the correct ffprobe path
 ffmpeg.setFfprobePath(ffprobePath);
-
-// Setup logger
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json(),
-    winston.format.errors({ stack: true })
-  ),
-  defaultMeta: { service: 'ffmpeg-service' },
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.printf(({ level, message, timestamp, ...metadata }) => {
-          const metaStr = Object.keys(metadata).length ? 
-            `\n${JSON.stringify(metadata, null, 2)}` : '';
-          return `${timestamp} [${level}]: ${message}${metaStr}`;
-        })
-      )
-    })
-  ]
-});
 
 // --- Define a type for media classification ---
 export type MediaType = 'video' | 'audio' | 'unknown' | 'error';
@@ -45,12 +21,12 @@ export const checkMediaType = (filePath: string): Promise<MediaType> => {
   return new Promise((resolve) => { // Changed reject to resolve('error') for easier handling in combined function
       ffmpeg.ffprobe(filePath, (err, data) => {
       if (err) {
-          logger.error(`ffprobe error checking type for ${filePath}: ${err.message}`);
+          console.error(`ffprobe error checking type for ${filePath}: ${err.message}`);
           // Resolve with 'error' instead of rejecting to simplify control flow later
           return resolve('error');
       }
       if (!data || !data.streams || data.streams.length === 0) {
-          logger.warn(`ffprobe returned no stream data for ${filePath}.`);
+          console.warn(`ffprobe returned no stream data for ${filePath}.`);
           return resolve('unknown');
       }
 
@@ -99,7 +75,7 @@ export const extractAudio = (
             return reject(new Error(`Failed to create output directory ${outputDir}: ${dirError.message}`));
         }
 
-        logger.log("utils",`[Audio Extraction] Starting extraction from ${inputPath} to ${outputPath}`);
+        console.log(`[Audio Extraction] Starting extraction from ${inputPath} to ${outputPath}`);
 
         ffmpeg(inputPath)
             .outputOptions([
@@ -111,24 +87,24 @@ export const extractAudio = (
             ])
             .output(outputPath)
             .on('start', (commandLine) => {
-                logger.log("utils",`[Audio Extraction] Spawned Ffmpeg with command: ${commandLine.substring(0, 250)}...`);
+                console.log(`[Audio Extraction] Spawned Ffmpeg with command: ${commandLine.substring(0, 250)}...`);
             })
             .on('progress', (progress) => {
                 // Avoid excessive logging, maybe log every 10% or based on time
                 if (progress.percent && Math.round(progress.percent) % 20 === 0) {
-                    logger.log("utils",`[Audio Extraction] Progress (${path.basename(inputPath)}): ${progress.percent.toFixed(2)}%`);
+                    console.log(`[Audio Extraction] Progress (${path.basename(inputPath)}): ${progress.percent.toFixed(2)}%`);
                 } else if (progress.timemark) {
-                   // logger.log("utils",`[Audio Extraction] Processing timemark: ${progress.timemark}`);
+                   // console.log(`[Audio Extraction] Processing timemark: ${progress.timemark}`);
                 }
             })
             .on('end', () => {
-                logger.log("utils",`[Audio Extraction] Finished successfully: ${outputPath}`);
+                console.log(`[Audio Extraction] Finished successfully: ${outputPath}`);
                 resolve(outputPath); // Resolve with the output path
             })
             .on('error', (err, stdout, stderr) => {
-                logger.error(`[Audio Extraction] Error processing ${inputPath}:`, err.message);
-                logger.error('[Audio Extraction] Ffmpeg stdout:', stdout);
-                logger.error('[Audio Extraction] Ffmpeg stderr:', stderr);
+                console.error(`[Audio Extraction] Error processing ${inputPath}:`, err.message);
+                console.error('[Audio Extraction] Ffmpeg stdout:', stdout);
+                console.error('[Audio Extraction] Ffmpeg stderr:', stderr);
                 reject(new Error(`Error extracting audio from ${path.basename(inputPath)}: ${err.message}`));
             })
             .run();
@@ -157,16 +133,16 @@ export const ensureAudioFormat = async (
         audioBitrate?: string
     }
 ): Promise<string | null> => {
-    logger.log("utils",`[Ensure Audio] Checking media type for: ${inputPath}`);
+    console.log(`[Ensure Audio] Checking media type for: ${inputPath}`);
     const mediaType = await checkMediaType(inputPath);
 
     if (mediaType === 'error') {
-        logger.error(`[Ensure Audio] Could not determine media type for ${inputPath} due to ffprobe error. Skipping.`);
+        console.error(`[Ensure Audio] Could not determine media type for ${inputPath} due to ffprobe error. Skipping.`);
         return null; // Indicate failure to process due to check error
     }
 
     if (mediaType === 'video' || mediaType === 'audio') {
-        logger.log("utils",`[Ensure Audio] Type detected: ${mediaType}. Proceeding with audio extraction/conversion.`);
+        console.log(`[Ensure Audio] Type detected: ${mediaType}. Proceeding with audio extraction/conversion.`);
 
         const inputFilename = path.parse(inputPath).name;
         const outputBasename = options?.outputFilename || inputFilename;
@@ -181,15 +157,15 @@ export const ensureAudioFormat = async (
                 audioCodec: options?.audioCodec, // Will use default if undefined
                 audioBitrate: options?.audioBitrate // Will use default if undefined
             });
-            logger.log("utils",`[Ensure Audio] Successfully processed ${inputPath} to ${resultPath}`);
+            console.log(`[Ensure Audio] Successfully processed ${inputPath} to ${resultPath}`);
             return resultPath;
         } catch (extractionError: any) {
-            logger.error(`[Ensure Audio] Failed to extract/convert audio for ${inputPath}: ${extractionError.message}`);
+            console.error(`[Ensure Audio] Failed to extract/convert audio for ${inputPath}: ${extractionError.message}`);
             // Re-throw the specific extraction error for the caller to handle if needed
             throw extractionError;
         }
     } else {
-        logger.log("utils",`[Ensure Audio] File ${inputPath} is not a processable video or audio file (type: ${mediaType}). Skipping.`);
+        console.log(`[Ensure Audio] File ${inputPath} is not a processable video or audio file (type: ${mediaType}). Skipping.`);
         return null; // Indicate that no processing was needed/possible
     }
 };
@@ -249,8 +225,7 @@ export const processResolution = (
   resolutionInfo: Types.ResolutionInfo,
   options: Types.HlsOptions,
   videoId: string
-): Promise<Types.ResolutionInfo> => {
-  // ... (your existing implementation)
+): Promise<Types.ResolutionInfo & { playlistRelativePath: string; bandwidth: number }> => { // Ensure return type includes needed fields
   return new Promise(async (resolve, reject) => {
     const { name, size, bitrate, isOriginal } = resolutionInfo;
     const {
@@ -259,20 +234,29 @@ export const processResolution = (
       segmentNameTemplate, resolutionPlaylistName
     } = options;
 
+    // Ensure segmentNameTemplate ends with .ts if using mpegts
+    // If your template doesn't include the extension, FFmpeg might add it,
+    // but being explicit can be better. Example: 'segment%03d.ts'
+    const correctedSegmentNameTemplate = segmentNameTemplate.includes('.')
+       ? segmentNameTemplate // Assume template includes extension
+       : `${segmentNameTemplate}.ts`; // Add .ts if missing
+
     const resOutputDir = path.join(outputDir, name);
     const playlistPath = path.join(resOutputDir, resolutionPlaylistName);
-    const segmentPath = path.join(resOutputDir, segmentNameTemplate);
-    const bandwidth = parseInt(String(bitrate).replace('k', '')) * 1000 || 500000;
+    // Use the corrected template for the segment path
+    const segmentPath = path.join(resOutputDir, correctedSegmentNameTemplate);
+    // Ensure bandwidth calculation handles potential non-numeric bitrate string safely
+    const numericBitrate = parseInt(String(bitrate).replace(/\D/g, ''), 10); // Remove non-digits
+    const bandwidth = numericBitrate ? numericBitrate * 1000 : 500000; // Default if parsing fails
 
     try {
       // Ensure the resolution directory exists
-      // const fs = require('fs').promises; // Already imported at top
       try {
         await fs.access(resOutputDir);
       } catch (error: any) {
         if (error.code === 'ENOENT') {
           await fs.mkdir(resOutputDir, { recursive: true });
-          logger.log("utils",`[HLS ${videoId}] Directory created: ${resOutputDir}`);
+          console.log(`[HLS ${videoId}] Directory created: ${resOutputDir}`);
         } else {
           throw error; // Re-throw other errors
         }
@@ -287,66 +271,81 @@ export const processResolution = (
 
 
       if (shouldCopyCodecs) {
-        logger.log("utils",`[HLS ${videoId}] Segmenting resolution ${name} by copying streams.`);
+        console.log(`[HLS ${videoId}] Segmenting resolution ${name} by copying streams.`);
         outputOptions.push(
           '-c:v copy',
           '-c:a copy'
         );
       } else {
-        logger.log("utils",`[HLS ${videoId}] Re-encoding to ${name}.`);
+        console.log(`[HLS ${videoId}] Re-encoding to ${name}.`);
         // Ensure size is correctly formatted (e.g., -1:720 or 1280:-1)
-        const scaleOption = size.includes(':') ? size : `-1:${name.replace('p','')}`; // Basic example, refine if needed
+        // Refined scaleOption logic
+        let scaleOption = '-2:720'; // Default fallback or adjust as needed
+        if (size && size.includes(':')) {
+            scaleOption = size; // Use provided size if it has ':'
+        } else if (!isNaN(numericHeight)) {
+            scaleOption = `-2:${numericHeight}`; // Use parsed height, let FFmpeg calculate width (-2)
+        } else {
+            console.warn(`[HLS ${videoId}] Could not determine valid scale for ${name}. Using default ${scaleOption}.`);
+        }
+
         outputOptions.push(
-          `-vf scale=${scaleOption}`, // Use scaleOption
+          `-vf scale=${scaleOption}`,
           `-c:a ${audioCodec}`, `-ar 48000`, `-b:a ${audioBitrate}`,
           `-c:v ${videoCodec}`, `-profile:v ${videoProfile}`, `-crf ${crf}`, `-sc_threshold 0`,
           `-g ${gopSize}`, `-keyint_min ${gopSize}`,
-          `-b:v ${bitrate}`, // Video bitrate
+          `-b:v ${bitrate}`, // Video bitrate (e.g., '5000k')
           `-maxrate ${Math.floor(bandwidth * 1.2 / 1000)}k`, // Maxrate based on bandwidth
           `-bufsize ${Math.floor(bandwidth * 1.5 / 1000)}k`  // Bufsize based on bandwidth
         );
       }
 
+      // --- CRITICAL CHANGE HERE ---
       outputOptions.push(
         `-hls_time ${hlsTime}`,
         `-hls_playlist_type ${hlsPlaylistType}`,
-        `-hls_segment_filename ${segmentPath}`,
-        '-hls_flags delete_segments+independent_segments', // Useful flags
-        `-hls_segment_type fmp4` // Use fmp4 for broader compatibility if desired
+        `-hls_segment_filename ${segmentPath}`, // Use the path with the corrected template
+        '-hls_flags delete_segments+independent_segments',
+        // Use mpegts instead of fmp4 to avoid init.mp4 and EXT-X-MAP
+        `-hls_segment_type mpegts`
       );
+      // --- END OF CHANGE ---
+
 
       command
         .outputOptions(outputOptions)
         .output(playlistPath)
-        .on('start', (commandLine) => logger.log("utils",`[HLS ${videoId}] Started processing ${name}: ${commandLine.substring(0, 200)}...`))
+        .on('start', (commandLine) => console.log(`[HLS ${videoId}] Started processing ${name}: ${commandLine.substring(0, 200)}...`))
         .on('progress', (progress) => {
-          // Log progress less frequently
-          if (progress.percent && Math.round(progress.percent) % 10 === 0) {
-             // Check if the last log was recent to avoid flood
-            logger.log("utils",`[HLS ${videoId}] Processing ${name}: ${progress.percent.toFixed(2)}% done`);
-          }
+          // Consider a less frequent logging strategy if needed
+           if (progress.percent && Math.round(progress.percent) % 10 === 0) {
+             // Basic throttle: only log every 10%
+             // You could add a timestamp check for finer control
+             console.log(`[HLS ${videoId}] Processing ${name}: ${progress.percent.toFixed(2)}% done`);
+           }
         })
         .on('end', () => {
-          logger.log("utils",`[HLS ${videoId}] Finished processing ${name}`);
+          console.log(`[HLS ${videoId}] Finished processing ${name}`);
+          // Ensure the resolved object structure matches the Promise<...> type hint
           resolve({
-            // Ensure resolved object matches Types.ResolutionInfo structure
             name,
-            size, // Original size string might be needed or calculated dimensions
-            bitrate, // Bitrate string '5000k'
-            bandwidth, // Calculated numeric bandwidth
-            playlistRelativePath: `${name}/${resolutionPlaylistName}` // Relative path for master playlist
-            // Add other fields from Types.ResolutionInfo if they exist and are needed here
+            size, // Original size string
+            bitrate, // Original bitrate string '5000k'
+            isOriginal, // Pass through isOriginal status
+            // Include the necessary fields for the master playlist
+            playlistRelativePath: path.join(name, resolutionPlaylistName), // Relative path
+            bandwidth: bandwidth // Numeric bandwidth value
           });
         })
         .on('error', (err, stdout, stderr) => {
-          logger.error(`[HLS ${videoId}] Error processing ${name}:`, err.message);
-          logger.error(`[HLS ${videoId}] Ffmpeg stdout:`, stdout);
-          logger.error(`[HLS ${videoId}] Ffmpeg stderr:`, stderr);
-          reject(new Error(`Error processing ${name}: ${err.message}`));
+          console.error(`[HLS ${videoId}] Error processing ${name}:`, err.message);
+          // Log full stderr for debugging if it's not excessively long
+          console.error(`[HLS ${videoId}] Ffmpeg stderr:`, stderr || 'Not available');
+          reject(new Error(`Error processing ${name}: ${err.message}\nStderr: ${stderr}`));
         })
         .run();
     } catch (error: any) {
-        logger.error(`[HLS ${videoId}] General error in processResolution for ${name}: ${error.message}`);
+        console.error(`[HLS ${videoId}] General error in processResolution for ${name}: ${error.message}`);
         reject(error);
     }
   });
@@ -378,7 +377,7 @@ export const generateAudioHls = (
       try {
           // Ensure the audio HLS directory exists
           await fs.mkdir(audioHlsDir, { recursive: true });
-          logger.log("utils",`[AudioHLS ${audioId}] Directory created: ${audioHlsDir}`);
+          console.log(`[AudioHLS ${audioId}] Directory created: ${audioHlsDir}`);
 
           const command = ffmpeg(inputPath);
           const outputOptions: string[] = [
@@ -398,26 +397,26 @@ export const generateAudioHls = (
           command
               .outputOptions(outputOptions)
               .output(playlistPath)
-              .on('start', (commandLine) => logger.log("utils",`[AudioHLS ${audioId}] Started: ${commandLine.substring(0, 200)}...`))
+              .on('start', (commandLine) => console.log(`[AudioHLS ${audioId}] Started: ${commandLine.substring(0, 200)}...`))
               .on('progress', (progress) => {
                   if (progress.percent && Math.round(progress.percent) % 10 === 0) {
-                      logger.log("utils",`[AudioHLS ${audioId}] Progress: ${progress.percent.toFixed(2)}% done`);
+                      console.log(`[AudioHLS ${audioId}] Progress: ${progress.percent.toFixed(2)}% done`);
                   }
               })
               .on('end', () => {
-                  logger.log("utils",`[AudioHLS ${audioId}] Finished successfully.`);
+                  console.log(`[AudioHLS ${audioId}] Finished successfully.`);
                   resolve({ playlistPath, playlistRelativePath });
               })
               .on('error', (err, stdout, stderr) => {
-                  logger.error(`[AudioHLS ${audioId}] Error generating audio HLS:`, err.message);
-                  logger.error(`[AudioHLS ${audioId}] Ffmpeg stdout:`, stdout);
-                  logger.error(`[AudioHLS ${audioId}] Ffmpeg stderr:`, stderr);
+                  console.error(`[AudioHLS ${audioId}] Error generating audio HLS:`, err.message);
+                  console.error(`[AudioHLS ${audioId}] Ffmpeg stdout:`, stdout);
+                  console.error(`[AudioHLS ${audioId}] Ffmpeg stderr:`, stderr);
                   reject(new Error(`Error generating audio HLS for ${audioId}: ${err.message}`));
               })
               .run();
 
       } catch (error: any) {
-          logger.error(`[AudioHLS ${audioId}] Setup error before ffmpeg start: ${error.message}`);
+          console.error(`[AudioHLS ${audioId}] Setup error before ffmpeg start: ${error.message}`);
           reject(error);
       }
   });

@@ -4,11 +4,9 @@ import { parse, types, stringify } from 'hls-parser';
 import { type ResolutionInfo, type HlsOptions } from '../types';
 import { defaultHlsOptions } from '../config/default-options';
 
-// --- Constantes para Agrupar Pistas ---
 const AUDIO_GROUP_ID = 'aac-audio';
 const SUBTITLE_GROUP_ID = 'subs';
 
-// --- Tipos para Información de Pistas ---
 interface MediaTrackInfo {
   lang: string;
   name: string;
@@ -24,51 +22,34 @@ interface SubtitleTrackInfo extends MediaTrackInfo {
 const BaseUrl = 'http://localhost:4000/stream-resource/';
 
 export const generatePlaylistUrl = (
-  proxyBaseUrl: string = BaseUrl, // Using BaseUrl as default
+  proxyBaseUrl: string = BaseUrl,
   playlistName: string
 ): string => {
-  // Handle null or undefined values
   if (!proxyBaseUrl) proxyBaseUrl = BaseUrl;
-  
-  // Format proxyBaseUrl to ensure it ends with a slash if not empty
   const formattedProxyBaseUrl = proxyBaseUrl 
     ? (proxyBaseUrl.endsWith('/') ? proxyBaseUrl : `${proxyBaseUrl}/`) 
     : '';
-  
   return `${formattedProxyBaseUrl}${playlistName}`;
 };
 
 export const generateProxyBaseUrl = (
   videoId: string,
-  basePath: string = BaseUrl, // Using BaseUrl as default
+  basePath: string = BaseUrl,
   proxyBaseUrlTemplate: string = defaultHlsOptions.proxyBaseUrlTemplate
 ): string => {
-  // Handle null or undefined values
   if (!videoId) videoId = '';
   if (!basePath) basePath = BaseUrl;
-  
-  // Format basePath to ensure it ends with a slash if not empty
   const formattedBasePath = basePath 
     ? (basePath.endsWith('/') ? basePath : `${basePath}/`) 
     : '';
-  
-  // Apply template replacements
   let url = proxyBaseUrlTemplate;
-  
-  // Replace all occurrences of videoId first (in case it's used multiple times)
   url = url.replace(/\{videoId\}/g, videoId);
-  
-  // Replace basePath placeholder
   url = url.replace(/\{basePath\}/g, formattedBasePath);
-  
-  // Clean up any double slashes that might have been created (except after protocol)
   url = url.replace(/([^:])\/+/g, '$1/');
-  
-  // Preserve protocol double slashes if present
   url = url.replace(/^([a-zA-Z]+):\/([^/])/, '$1://$2');
-  
   return url;
 };
+
 export const createMasterPlaylist = async (
   outputDir: string, 
   successfulResolutions: ResolutionInfo[], 
@@ -77,12 +58,10 @@ export const createMasterPlaylist = async (
   basePath: string = ''
 ): Promise<{ masterPlaylistPath: string; masterPlaylistUrl: string }> => {
   // Ensure basePath ends with a trailing slash if provided
-  const newBasePath = generateProxyBaseUrl(videoId, basePath);
-  
+  const newBasePath = basePath ? (basePath.endsWith('/') ? basePath : `${basePath}/`) : '';
+  console.log("outputDir",outputDir,"successfulResolutions",successfulResolutions,"options",options,"videoId",videoId,"basePath",basePath);
   // Generate the proxy base URL
-  const proxyBaseUrl = options.proxyBaseUrlTemplate
-    .replace('{videoId}', videoId)
-    .replace('{basePath}', newBasePath);
+  const proxyBaseUrl = generateProxyBaseUrl(videoId, newBasePath);
   
   // Sort resolutions by bandwidth
   const sortedResolutions = [...successfulResolutions].sort((a, b) => 
@@ -142,18 +121,14 @@ export const addMediaToMasterPlaylist = async (
       : path.join(masterPlaylistPath, 'master.m3u8');
     const content = await fs.readFile(contentPath, 'utf-8');
     const playlist = parse(content);
-
     if (!(playlist instanceof types.MasterPlaylist)) {
       throw new Error('El archivo no es un Master Playlist válido.');
     }
     const proxyBaseUrl = generateProxyBaseUrl(videoId);
-    // Limpiar media existente (opcional)
     playlist.variants.forEach(v => {
       v.audio = [];
       v.subtitles = [];
     });
-
-    // Agregar pistas de audio
     audioTracks.forEach(track => {
       const audioRendition = new types.Rendition({
         type: 'AUDIO',
@@ -165,13 +140,10 @@ export const addMediaToMasterPlaylist = async (
         forced: false,
         uri: `${proxyBaseUrl}${track.relativePath}`
       });
-      
       playlist.variants.forEach(v => {
         v.audio.push(audioRendition as types.Rendition & { type: "AUDIO" });
       });
     });
-
-    // Agregar pistas de subtítulos
     subtitleTracks.forEach(track => {
       const subtitleRendition = new types.Rendition({
         type: 'SUBTITLES',
@@ -183,13 +155,10 @@ export const addMediaToMasterPlaylist = async (
         forced: track.isForced ?? false,
         uri: `${proxyBaseUrl}${track.relativePath}`
       });
-      
       playlist.variants.forEach(v => {
         v.subtitles.push(subtitleRendition as types.Rendition & { type: "SUBTITLES" });
       });
     });
-
-    // Actualizar codecs para incluir audio si es necesario
     playlist.variants.forEach(variant => {
       if (audioTracks.length > 0) {
         const defaultAudio = audioTracks.find(t => t.isDefault);
@@ -198,8 +167,6 @@ export const addMediaToMasterPlaylist = async (
         }
       }
     });
-
-    // Guardar cambios
     await fs.writeFile(contentPath, stringify(playlist));
     console.log(`Master playlist actualizado con ${audioTracks.length} audios y ${subtitleTracks.length} subtítulos.`);
   } catch (error) {
